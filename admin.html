@@ -1,0 +1,3526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>后台管理系统</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-sidebar-hover: #f1f5f9;
+  --bg-sidebar-active: #eef2ff;
+  --bg-submenu: #f8fafc;
+  --border: rgba(0,0,0,0.06);
+  --border-light: rgba(0,0,0,0.08);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent: #6366f1;
+  --accent-light: #4f46e5;
+  --accent-bg: rgba(99,102,241,0.08);
+  --green: #10b981;
+  --green-bg: rgba(16,185,129,0.08);
+  --amber: #f59e0b;
+  --amber-bg: rgba(245,158,11,0.08);
+  --rose: #ef4444;
+  --rose-bg: rgba(239,68,68,0.08);
+  --cyan: #06b6d4;
+  --cyan-bg: rgba(6,182,212,0.08);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow: 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.08);
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ===== App Layout ===== */
+.app-layout { display: flex; min-height: 100vh; }
+
+/* ===== Sidebar ===== */
+.sidebar {
+  width: 240px; min-width: 240px; background: var(--bg-sidebar);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto;
+  box-shadow: 1px 0 20px rgba(0,0,0,0.03);
+}
+
+.sidebar-header {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-logo {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 18px; font-weight: 700; flex-shrink: 0;
+}
+.sidebar-brand { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.sidebar-brand-sub { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+
+/* Sidebar Nav */
+.sidebar-nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+
+/* Nav Section */
+.nav-section { margin-bottom: 4px; }
+.nav-section-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  color: var(--text-muted); padding: 12px 12px 6px; letter-spacing: 0.06em;
+}
+
+/* Nav Item */
+.nav-item { display: flex; flex-direction: column; }
+
+.nav-link {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px;
+  font-size: 14px; font-weight: 500; color: var(--text-secondary); text-decoration: none;
+  transition: all 0.15s ease; cursor: pointer; border: none; background: none;
+  width: 100%; text-align: left; font-family: inherit;
+  position: relative;
+}
+.nav-link:hover { background: var(--bg-sidebar-hover); color: var(--text-primary); }
+.nav-link.active { background: var(--bg-sidebar-active); color: var(--accent-light); font-weight: 600; }
+.nav-link.active::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 20px; background: var(--accent); border-radius: 0 3px 3px 0;
+}
+
+.nav-link-icon {
+  width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: inherit;
+}
+.nav-link-icon svg { width: 18px; height: 18px; }
+
+.nav-link-arrow {
+  margin-left: auto; transition: transform 0.25s ease; flex-shrink: 0;
+  display: flex; align-items: center;
+}
+.nav-link-arrow svg { width: 14px; height: 14px; color: var(--text-muted); }
+.nav-parent.expanded .nav-link-arrow { transform: rotate(90deg); }
+
+/* Submenu */
+.nav-submenu {
+  overflow: hidden; max-height: 0;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-parent.expanded .nav-submenu { max-height: 200px; }
+
+.nav-subitem {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px 8px 42px; border-radius: 6px;
+  font-size: 13px; font-weight: 500; color: var(--text-secondary);
+  text-decoration: none; cursor: pointer; border: none; background: none;
+  width: 100%; text-align: left; font-family: inherit;
+  transition: all 0.15s ease;
+}
+.nav-subitem:hover { color: var(--accent-light); background: var(--bg-sidebar-hover); }
+.nav-subitem.active { color: var(--accent-light); background: var(--bg-sidebar-active); font-weight: 600; }
+
+/* Badge */
+.nav-badge {
+  margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 8px;
+  border-radius: 100px; background: var(--accent-bg); color: var(--accent-light);
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  padding: 12px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 13px; font-weight: 600; flex-shrink: 0;
+}
+.sidebar-user-info { flex: 1; min-width: 0; }
+.sidebar-user-name { font-size: 13px; font-weight: 600; }
+.sidebar-user-role { font-size: 11px; color: var(--text-muted); }
+.sidebar-logout {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-light);
+  background: var(--bg-card); cursor: pointer; display: flex; align-items: center;
+  justify-content: center; color: var(--text-muted); transition: all 0.15s ease;
+}
+.sidebar-logout:hover { background: var(--rose-bg); color: var(--rose); border-color: var(--rose); }
+
+/* ===== Main Content ===== */
+.main-content { flex: 1; margin-left: 240px; min-width: 0; }
+
+/* Top Bar */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--bg-card); border-bottom: 1px solid var(--border);
+  padding: 16px 28px; display: flex; align-items: center; justify-content: space-between;
+}
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.topbar-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+.topbar-breadcrumb span { color: var(--text-primary); font-weight: 600; }
+.topbar-title { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-btn {
+  height: 36px; padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-secondary); display: flex; align-items: center; gap: 6px;
+  transition: all 0.15s ease; font-family: inherit;
+}
+.topbar-btn:hover { background: var(--bg-primary); border-color: rgba(0,0,0,0.15); }
+.topbar-btn-primary {
+  background: linear-gradient(180deg, #818cf8 0%, #4f46e5 100%); color: #fff;
+  border: none; box-shadow: 0 2px 0 #3730a3, 0 4px 12px rgba(99,102,241,0.3);
+}
+.topbar-btn-primary:hover { transform: translateY(1px); box-shadow: 0 1px 0 #3730a3, 0 2px 8px rgba(99,102,241,0.2); color: #fff; }
+
+/* Content Area */
+.content-area { padding: 28px; }
+
+/* Page Section */
+.page-section { display: none; }
+.page-section.active { display: block; }
+
+/* ===== Dashboard Stats ===== */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 24px; display: flex; align-items: flex-start; gap: 16px;
+  transition: all 0.2s ease;
+}
+.stat-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.stat-icon {
+  width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; font-size: 20px;
+}
+.stat-icon--blue { background: var(--accent-bg); color: var(--accent); }
+.stat-icon--green { background: var(--green-bg); color: var(--green); }
+.stat-icon--amber { background: var(--amber-bg); color: var(--amber); }
+.stat-icon--cyan { background: var(--cyan-bg); color: var(--cyan); }
+.stat-info { flex: 1; }
+.stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+.stat-value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+.stat-change { font-size: 12px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+.stat-change--up { color: var(--green); }
+.stat-change--down { color: var(--rose); }
+
+/* ===== Content Cards ===== */
+.content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+.card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.card-header {
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-size: 15px; font-weight: 700; }
+.card-title-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.card-body { padding: 24px; }
+.card-body--no-padding { padding: 0; }
+
+/* ===== Table ===== */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; padding: 12px 20px; font-size: 11px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+  background: var(--bg-primary); border-bottom: 1px solid var(--border);
+}
+td { padding: 14px 20px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(99,102,241,0.02); }
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+  border-radius: 100px; font-size: 12px; font-weight: 600;
+}
+.status-badge--active { background: var(--green-bg); color: var(--green); }
+.status-badge--draft { background: var(--amber-bg); color: var(--amber); }
+.status-badge--review { background: var(--cyan-bg); color: var(--cyan); }
+.status-badge--inactive { background: #f1f5f9; color: #94a3b8; }
+
+/* Action Buttons */
+.actions { display: flex; gap: 8px; white-space: nowrap; }
+.btn-sm {
+  height: 30px; padding: 0 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-secondary); display: inline-flex; align-items: center; gap: 4px;
+  transition: all 0.15s ease; font-family: inherit;
+  white-space: nowrap; flex-shrink: 0;
+}
+.btn-sm:hover { background: var(--bg-primary); border-color: rgba(0,0,0,0.2); }
+.btn-sm--primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-sm--primary:hover { background: var(--accent-light); color: #fff; }
+.btn-sm--danger { color: var(--rose); }
+.btn-sm--danger:hover { background: var(--rose-bg); border-color: var(--rose); }
+
+/* ===== Quick Actions List ===== */
+.quick-list { display: flex; flex-direction: column; }
+.quick-list-item {
+  display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+  border-bottom: 1px solid var(--border); transition: background 0.15s ease;
+  cursor: pointer;
+}
+.quick-list-item:last-child { border-bottom: none; }
+.quick-list-item:hover { background: rgba(99,102,241,0.02); }
+.quick-list-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.quick-list-dot--blue { background: var(--accent); }
+.quick-list-dot--green { background: var(--green); }
+.quick-list-dot--amber { background: var(--amber); }
+.quick-list-dot--rose { background: var(--rose); }
+.quick-list-info { flex: 1; min-width: 0; }
+.quick-list-title { font-size: 13px; font-weight: 600; }
+.quick-list-desc { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quick-list-time { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+
+/* ===== Empty State ===== */
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--text-muted);
+}
+.empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+.empty-state-desc { font-size: 13px; max-width: 360px; margin: 0 auto 24px; }
+
+/* ===== Form Elements ===== */
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+.form-input {
+  width: 100%; height: 40px; padding: 0 14px; border-radius: 8px;
+  border: 1px solid var(--border-light); font-size: 14px; font-family: inherit;
+  color: var(--text-primary); background: var(--bg-card); transition: all 0.15s ease;
+  outline: none;
+}
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.form-input::placeholder { color: var(--text-muted); }
+.form-textarea {
+  width: 100%; min-height: 100px; padding: 12px 14px; border-radius: 8px;
+  border: 1px solid var(--border-light); font-size: 14px; font-family: inherit;
+  color: var(--text-primary); background: var(--bg-card); transition: all 0.15s ease;
+  outline: none; resize: vertical;
+}
+.form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+/* ===== Filter Bar ===== */
+.filter-bar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.search-input {
+  width: 280px; height: 38px; padding: 0 14px; border-radius: 8px;
+  border: 1px solid var(--border-light); font-size: 13px; font-family: inherit;
+  color: var(--text-primary); background: var(--bg-card); outline: none;
+  transition: all 0.15s ease;
+}
+.search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.search-input::placeholder { color: var(--text-muted); }
+.filter-select {
+  height: 38px; padding: 0 32px 0 12px; border-radius: 8px;
+  border: 1px solid var(--border-light); font-size: 13px; font-family: inherit;
+  color: var(--text-primary); background: var(--bg-card); outline: none;
+  cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+
+/* ===== Pagination ===== */
+.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0; font-size: 13px; color: var(--text-muted);
+}
+.pagination-btns { display: flex; gap: 4px; }
+.pagination-btn {
+  width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center;
+  justify-content: center; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all 0.15s ease; font-family: inherit;
+}
+.pagination-btn:hover { border-color: rgba(0,0,0,0.2); }
+.pagination-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Empty table row */
+.empty-row td { text-align: center; padding: 40px; color: var(--text-muted); }
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .content-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar { width: 200px; min-width: 200px; }
+  .main-content { margin-left: 200px; }
+  .stats-grid { grid-template-columns: 1fr; }
+}
+/* ===== Markdown Editor Modal ===== */
+.md-modal-overlay {
+  position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+}
+.md-modal-overlay.active { opacity: 1; pointer-events: auto; }
+.md-modal {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  width: 100%; max-width: 1100px; height: 85vh; display: flex; flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18); transform: translateY(12px);
+  transition: transform 0.25s ease; overflow: hidden;
+}
+.md-modal-overlay.active .md-modal { transform: translateY(0); }
+.md-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.md-modal-title { font-size: 16px; font-weight: 700; }
+.md-modal-close {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-light);
+  background: var(--bg-card); cursor: pointer; display: flex; align-items: center;
+  justify-content: center; color: var(--text-muted); transition: all 0.15s ease;
+  font-size: 18px; line-height: 1;
+}
+.md-modal-close:hover { background: var(--rose-bg); color: var(--rose); border-color: var(--rose); }
+.markdown-editor-wrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.markdown-editor-toolbar {
+  display: flex; align-items: center; gap: 6px; padding: 10px 16px;
+  background: var(--bg-primary); border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; flex-shrink: 0;
+}
+.markdown-editor-toolbar button {
+  height: 30px; padding: 0 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-secondary); transition: all 0.15s ease; font-family: inherit;
+  white-space: nowrap;
+}
+.markdown-editor-toolbar button:hover { background: var(--bg-primary); border-color: rgba(0,0,0,0.2); }
+.markdown-editor-toolbar .toolbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+.markdown-editor-body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.markdown-editor-input {
+  flex: 1; padding: 20px; border: none; border-right: 1px solid var(--border);
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  font-size: 14px; line-height: 1.8; resize: none; outline: none; background: var(--bg-card);
+  color: var(--text-primary); min-width: 0;
+}
+/* Right: Activity Info Panel */
+.activity-info-panel {
+  width: 340px; flex-shrink: 0; padding: 24px 20px; overflow-y: auto;
+  background: #fafbfc; display: flex; flex-direction: column; gap: 18px;
+}
+.activity-info-panel-title {
+  font-size: 15px; font-weight: 700; color: var(--text-primary);
+  padding-bottom: 10px; border-bottom: 2px solid var(--accent);
+  display: flex; align-items: center; gap: 8px;
+}
+.activity-info-panel-title::before { content: '📋'; font-size: 16px; }
+.activity-field { display: flex; flex-direction: column; gap: 5px; }
+.activity-field label {
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.activity-field input, .activity-field textarea, .activity-field select {
+  padding: 10px 12px; border: 1px solid var(--border-light); border-radius: 8px;
+  font-size: 13px; font-family: inherit; outline: none; background: var(--bg-card);
+  transition: border-color 0.15s ease; color: var(--text-primary);
+}
+.activity-field input:focus, .activity-field textarea:focus, .activity-field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.activity-field input[type="datetime-local"] { font-family: inherit; }
+.activity-field .field-hint { font-size: 11px; color: var(--text-muted); }
+.activity-cover-preview {
+  width: 100%; height: 120px; border-radius: 8px; border: 1px dashed var(--border);
+  background: var(--bg-card); display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); font-size: 13px; overflow: hidden; margin-top: 4px;
+}
+.activity-cover-preview img { width: 100%; height: 100%; object-fit: cover; }
+.activity-info-panel .btn-sm--primary { width: 100%; margin-top: 4px; }
+
+/* ===== Chapter Modal ===== */
+.chapter-modal-overlay {
+  position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+}
+.chapter-modal-overlay.active { opacity: 1; pointer-events: auto; }
+.chapter-modal {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  width: 100%; max-width: 1000px; max-height: 80vh; display: flex; flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18); transform: translateY(12px);
+  transition: transform 0.25s ease; overflow: hidden;
+}
+.chapter-modal-overlay.active .chapter-modal { transform: translateY(0); }
+.chapter-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.chapter-modal-title { font-size: 16px; font-weight: 700; }
+.chapter-modal-header-right { display: flex; align-items: center; gap: 10px; }
+.chapter-modal-add-btn {
+  height: 34px; padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; background: linear-gradient(180deg, #818cf8 0%, #4f46e5 100%);
+  color: #fff; box-shadow: 0 2px 0 #3730a3, 0 4px 12px rgba(99,102,241,0.3);
+  display: flex; align-items: center; gap: 4px; font-family: inherit;
+  white-space: nowrap; transition: all 0.15s ease;
+}
+.chapter-modal-add-btn:hover { transform: translateY(1px); box-shadow: 0 1px 0 #3730a3, 0 2px 8px rgba(99,102,241,0.2); }
+.chapter-modal-close {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-light);
+  background: var(--bg-card); cursor: pointer; display: flex; align-items: center;
+  justify-content: center; color: var(--text-muted); transition: all 0.15s ease;
+  font-size: 18px; line-height: 1; flex-shrink: 0;
+}
+.chapter-modal-close:hover { background: var(--rose-bg); color: var(--rose); border-color: var(--rose); }
+.chapter-modal-body { flex: 1; overflow-y: auto; }
+
+/* Expandable chapter rows */
+.chapter-row { cursor: pointer; }
+.chapter-row:hover td { background: rgba(99,102,241,0.03); }
+.chapter-expand-arrow {
+  display: inline-block; margin-right: 6px; font-size: 11px; color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+.chapter-row.expanded .chapter-expand-arrow { transform: rotate(90deg); }
+.chapter-subsections-row { display: none; }
+.chapter-subsections-row.expanded { display: table-row; }
+.chapter-subsections-row > td {
+  padding: 0 !important; background: #fafbfc; border-bottom: 2px solid var(--border);
+}
+.subsection-nested-table { width: 100%; margin: 0; }
+.subsection-nested-table th {
+  font-size: 10px; padding: 8px 16px; background: transparent;
+  border-bottom: 1px solid var(--border);
+}
+.subsection-nested-table td { padding: 9px 16px; font-size: 12px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.subsection-nested-table tr:last-child td { border-bottom: none; }
+.subsection-empty { text-align: center; color: var(--text-muted); padding: 20px; font-size: 13px; }
+
+/* ===== Subsection Editor Modal ===== */
+.subsection-modal-overlay {
+  position: fixed; inset: 0; z-index: 600; background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+}
+.subsection-modal-overlay.active { opacity: 1; pointer-events: auto; }
+.subsection-modal {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  width: 100%; max-width: 1200px; height: 85vh; display: flex; flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18); transform: translateY(12px);
+  transition: transform 0.25s ease; overflow: hidden;
+}
+.subsection-modal-overlay.active .subsection-modal { transform: translateY(0); }
+.subsection-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.subsection-modal-title { font-size: 16px; font-weight: 700; }
+.subsection-modal-close {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-light);
+  background: var(--bg-card); cursor: pointer; display: flex; align-items: center;
+  justify-content: center; color: var(--text-muted); transition: all 0.15s ease;
+  font-size: 18px; line-height: 1;
+}
+.subsection-modal-close:hover { background: var(--rose-bg); color: var(--rose); border-color: var(--rose); }
+.subsection-modal-body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+
+/* Left: mini markdown */
+.subsection-md-wrap { width: 55%; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+.subsection-md-toolbar {
+  display: flex; align-items: center; gap: 6px; padding: 8px 14px;
+  background: var(--bg-primary); border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; flex-shrink: 0;
+}
+.subsection-md-toolbar button {
+  height: 26px; padding: 0 10px; border-radius: 5px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-secondary); transition: all 0.15s ease; font-family: inherit;
+  white-space: nowrap;
+}
+.subsection-md-toolbar button:hover { background: var(--bg-primary); border-color: rgba(0,0,0,0.2); }
+.subsection-md-toolbar .toolbar-sep { width: 1px; height: 16px; background: var(--border); margin: 0 3px; }
+.subsection-md-editor {
+  flex: 1; padding: 16px; border: none; resize: none; outline: none;
+  font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+  font-size: 13px; line-height: 1.8; background: var(--bg-card); color: var(--text-primary);
+}
+.subsection-upload-zone {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px; margin: 0 16px 12px; border: 2px dashed var(--border-light);
+  border-radius: var(--radius); background: #fafbfc; text-align: center;
+  transition: all 0.2s ease; cursor: pointer;
+}
+.subsection-upload-zone.active { display: flex; }
+.subsection-upload-zone:hover { border-color: var(--accent); background: rgba(99,102,241,0.03); }
+.subsection-upload-zone.dragover { border-color: var(--accent); background: rgba(99,102,241,0.06); }
+.subsection-upload-icon { font-size: 32px; margin-bottom: 8px; color: var(--text-muted); }
+.subsection-upload-text { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+.subsection-upload-hint { font-size: 11px; color: var(--text-muted); }
+.subsection-upload-zone input[type="file"] { display: none; }
+
+/* Exercise Type Dropdown */
+.exercise-dropdown-wrap { position: relative; display: inline-flex; }
+.exercise-dropdown-menu {
+  display: none; position: absolute; top: 100%; left: 0; margin-top: 4px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50; min-width: 120px;
+  overflow: hidden; flex-direction: column;
+}
+.exercise-dropdown-menu.active { display: flex; }
+.exercise-dropdown-item {
+  display: flex; align-items: center; gap: 8px; padding: 9px 14px;
+  font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer;
+  border: none; background: none; font-family: inherit; text-align: left;
+  white-space: nowrap; transition: all 0.1s ease;
+}
+.exercise-dropdown-item:hover { background: var(--bg-sidebar-hover); color: var(--accent-light); }
+.exercise-dropdown-item + .exercise-dropdown-item { border-top: 1px solid var(--border); }
+
+/* ===== Quiz Editor Panel (inside subsection markdown area) ===== */
+.quiz-editor-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.quiz-editor-panel {
+  display: none; flex-direction: column; flex: 1; min-height: 0;
+  background: var(--bg-card);
+}
+.quiz-editor-panel.active { display: flex; }
+.quiz-editor-panel.active ~ .subsection-md-editor { display: none; }
+.quiz-editor-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  background: var(--bg-primary); flex-shrink: 0;
+}
+.quiz-editor-header span { font-size: 14px; font-weight: 700; }
+.quiz-editor-close {
+  width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border-light);
+  background: var(--bg-card); cursor: pointer; display: flex; align-items: center;
+  justify-content: center; color: var(--text-muted); font-size: 16px; line-height: 1;
+  transition: all 0.15s ease;
+}
+.quiz-editor-close:hover { background: var(--rose-bg); color: var(--rose); border-color: var(--rose); }
+.quiz-editor-body {
+  flex: 1; overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.quiz-field { display: flex; flex-direction: column; gap: 6px; }
+.quiz-field > label {
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
+  display: flex; align-items: center; gap: 10px;
+}
+.quiz-add-btn {
+  height: 24px; padding: 0 10px; border-radius: 5px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px dashed var(--border-light); background: transparent;
+  color: var(--accent); font-family: inherit; transition: all 0.15s ease;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.quiz-add-btn:hover { background: var(--accent-bg); border-style: solid; }
+.quiz-question-input {
+  width: 100%; height: 40px; padding: 0 14px; border-radius: 8px;
+  border: 1px solid var(--border-light); font-size: 14px; font-family: inherit;
+  color: var(--text-primary); background: var(--bg-card); transition: all 0.15s ease;
+  outline: none;
+}
+.quiz-question-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.quiz-options-list { display: flex; flex-direction: column; gap: 8px; }
+.quiz-option-row {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  border-radius: 8px; border: 1px solid var(--border-light); background: var(--bg-card);
+  transition: all 0.2s ease; cursor: pointer;
+}
+.quiz-option-row:hover { border-color: rgba(0,0,0,0.15); }
+.quiz-option-row.correct {
+  background: rgba(16,185,129,0.1); border-color: var(--green);
+  box-shadow: 0 0 0 2px rgba(16,185,129,0.15);
+}
+.quiz-option-letter {
+  width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 12px; font-weight: 700; background: var(--bg-primary);
+  color: var(--text-secondary); flex-shrink: 0; transition: all 0.2s ease;
+  border: 1px solid var(--border-light);
+}
+.quiz-option-row.correct .quiz-option-letter {
+  background: var(--green); color: #fff; border-color: var(--green);
+}
+.quiz-option-input {
+  flex: 1; height: 32px; padding: 0 10px; border-radius: 6px;
+  border: 1px solid transparent; font-size: 13px; font-family: inherit;
+  color: var(--text-primary); background: transparent; outline: none;
+  transition: all 0.15s ease;
+}
+.quiz-option-input:focus { border-color: var(--border-light); background: var(--bg-card); }
+.quiz-option-delete {
+  width: 24px; height: 24px; border-radius: 5px; border: none; background: transparent;
+  cursor: pointer; color: var(--text-muted); font-size: 16px; line-height: 1;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.quiz-option-delete:hover { background: var(--rose-bg); color: var(--rose); }
+.quiz-editor-footer {
+  padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+}
+.quiz-cancel-btn {
+  height: 34px; padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-secondary); font-family: inherit; transition: all 0.15s ease;
+}
+.quiz-cancel-btn:hover { background: var(--bg-primary); }
+.quiz-save-btn {
+  height: 34px; padding: 0 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; background: linear-gradient(180deg, #818cf8 0%, #4f46e5 100%);
+  color: #fff; box-shadow: 0 2px 0 #3730a3, 0 4px 12px rgba(99,102,241,0.3);
+  font-family: inherit; transition: all 0.15s ease;
+}
+.quiz-save-btn:hover { transform: translateY(1px); box-shadow: 0 1px 0 #3730a3, 0 2px 8px rgba(99,102,241,0.2); }
+
+/* Quiz validation error popup */
+.quiz-error-overlay {
+  display: none; position: absolute; inset: 0; z-index: 10;
+  background: rgba(0,0,0,0.35); align-items: center; justify-content: center;
+  border-radius: var(--radius);
+}
+.quiz-error-overlay.active { display: flex; }
+.quiz-error-dialog {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 24px; text-align: center; max-width: 340px; width: 90%;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+}
+.quiz-error-icon { font-size: 36px; margin-bottom: 12px; }
+.quiz-error-msg { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+.quiz-error-detail { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; }
+.quiz-error-btn {
+  height: 36px; padding: 0 24px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; background: var(--accent); color: #fff;
+  font-family: inherit; transition: all 0.15s ease;
+}
+.quiz-error-btn:hover { background: var(--accent-light); }
+
+/* Saved quiz cards inside the markdown editor */
+.saved-quizzes-container {
+  display: flex; flex-direction: column; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid var(--border); overflow-y: auto; flex-shrink: 0;
+  max-height: 50%;
+}
+.saved-quizzes-container:empty { display: none; }
+.saved-quiz-card {
+  background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px;
+  padding: 14px 16px; position: relative;
+  box-shadow: var(--shadow-sm); transition: all 0.2s ease;
+}
+.saved-quiz-card:hover { border-color: rgba(0,0,0,0.12); box-shadow: var(--shadow); }
+.saved-quiz-card-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.saved-quiz-number {
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  background: var(--accent-bg); padding: 3px 10px; border-radius: 100px;
+  letter-spacing: 0.03em;
+}
+.saved-quiz-copy-btn {
+  height: 26px; padding: 0 10px; border-radius: 5px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-muted); font-family: inherit; transition: all 0.15s ease;
+  display: flex; align-items: center; gap: 4px;
+}
+.saved-quiz-copy-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-bg); }
+.saved-quiz-delete-btn {
+  height: 26px; padding: 0 10px; border-radius: 5px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-muted); font-family: inherit; transition: all 0.15s ease;
+  display: flex; align-items: center; gap: 4px;
+}
+.saved-quiz-delete-btn:hover { color: var(--rose); border-color: var(--rose); background: var(--rose-bg); }
+.saved-quiz-header-right { display: flex; align-items: center; gap: 6px; }
+.saved-quiz-question {
+  font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px;
+  line-height: 1.5;
+}
+.saved-quiz-options { display: flex; flex-direction: column; gap: 5px; }
+.saved-quiz-option {
+  display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px;
+  font-size: 13px; color: var(--text-secondary); background: var(--bg-primary);
+  border: 1px solid transparent; transition: all 0.15s ease;
+}
+.saved-quiz-option.is-correct {
+  background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.25); color: #065f46;
+}
+.saved-quiz-option-letter {
+  width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
+  background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-light);
+}
+.saved-quiz-option.is-correct .saved-quiz-option-letter {
+  background: var(--green); color: #fff; border-color: var(--green);
+}
+
+/* ===== Question Bank Editor ===== */
+.qb-editor-body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.qb-left-panel {
+  flex: 1; display: flex; flex-direction: column; min-width: 0;
+  border-right: 1px solid var(--border);
+}
+.qb-type-selector {
+  display: flex; gap: 0; padding: 10px 14px; background: var(--bg-primary);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.qb-type-btn {
+  flex: 1; height: 32px; padding: 0 12px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-secondary); font-family: inherit; transition: all 0.15s ease;
+}
+.qb-type-btn:first-child { border-radius: 6px 0 0 6px; }
+.qb-type-btn:last-child { border-radius: 0 6px 6px 0; }
+.qb-type-btn + .qb-type-btn { border-left: none; }
+.qb-type-btn:hover { background: var(--bg-sidebar-hover); }
+.qb-type-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.qb-left-panel .quiz-editor-wrap { flex: 1; min-height: 0; }
+.qb-left-panel .saved-quizzes-container { max-height: 35%; }
+.qb-left-panel .quiz-editor-panel.active ~ .subsection-md-editor { display: none; }
+
+/* ===== Assignment Editor ===== */
+.assignment-editor-body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.assignment-left-panel {
+  flex: 1; display: flex; flex-direction: column; min-width: 0;
+  border-right: 1px solid var(--border);
+}
+.assignment-questions-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--bg-primary);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.assignment-questions-header span { font-size: 14px; font-weight: 700; }
+.assignment-add-btn {
+  width: 32px; height: 32px; border-radius: 8px; font-size: 20px; font-weight: 700;
+  cursor: pointer; border: 1px solid var(--accent); background: var(--accent);
+  color: #fff; font-family: inherit; transition: all 0.15s ease;
+  display: flex; align-items: center; justify-content: center; line-height: 1;
+}
+.assignment-add-btn:hover { background: var(--accent-light); transform: scale(1.05); }
+.assignment-questions-list {
+  flex: 1; overflow-y: auto; padding: 12px 16px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.assignment-questions-list:empty::after {
+  content: '点击上方 + 按钮添加题目';
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); font-size: 14px; padding: 48px 0;
+}
+.assignment-question-card {
+  background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px;
+  padding: 14px; box-shadow: var(--shadow-sm);
+}
+.assignment-question-card-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.assignment-question-number {
+  font-size: 12px; font-weight: 700; color: var(--accent);
+  background: var(--accent-bg); padding: 3px 10px; border-radius: 100px;
+}
+.assignment-question-delete {
+  width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border-light);
+  background: var(--bg-card); cursor: pointer; color: var(--text-muted); font-size: 14px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;
+}
+.assignment-question-delete:hover { background: var(--rose-bg); color: var(--rose); border-color: var(--rose); }
+.assignment-question-input {
+  width: 100%; height: 36px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--border-light); font-size: 13px; font-family: inherit;
+  color: var(--text-primary); background: var(--bg-card); outline: none;
+  transition: border-color 0.15s ease; margin-bottom: 8px;
+}
+.assignment-question-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.assignment-question-md {
+  width: 100%; min-height: 100px; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--border-light); font-size: 13px; font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+  color: var(--text-primary); background: var(--bg-card); outline: none; resize: vertical;
+  transition: border-color 0.15s ease; line-height: 1.6;
+}
+.assignment-question-md:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+/* File upload zone */
+.assignment-file-zone {
+  border: 2px dashed var(--border-light); border-radius: 10px;
+  padding: 20px; text-align: center; cursor: pointer;
+  transition: all 0.2s ease; background: var(--bg-card);
+}
+.assignment-file-zone:hover { border-color: var(--accent); background: rgba(99,102,241,0.03); }
+.assignment-file-icon { font-size: 28px; margin-bottom: 6px; }
+.assignment-file-text { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+.assignment-file-hint { font-size: 11px; color: var(--text-muted); }
+.assignment-file-list { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.assignment-file-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 6px; background: var(--accent-bg);
+  font-size: 11px; color: var(--accent); font-weight: 500;
+}
+.assignment-file-tag button {
+  width: 16px; height: 16px; border-radius: 50%; border: none; background: transparent;
+  cursor: pointer; color: var(--text-muted); font-size: 12px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.assignment-file-tag button:hover { background: var(--rose-bg); color: var(--rose); }
+
+/* Right: form */
+.subsection-form { width: 45%; padding: 20px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+.subsection-form-group { display: flex; flex-direction: column; gap: 6px; }
+.subsection-form-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.subsection-form-label small { font-weight: 400; color: var(--text-muted); font-size: 11px; }
+.subsection-form-input {
+  width: 100%; height: 38px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--border-light); font-size: 13px; font-family: inherit;
+  color: var(--text-primary); background: var(--bg-card); transition: all 0.15s ease;
+  outline: none;
+}
+.subsection-form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.subsection-form-textarea {
+  width: 100%; min-height: 80px; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--border-light); font-size: 13px; font-family: inherit;
+  color: var(--text-primary); background: var(--bg-card); transition: all 0.15s ease;
+  outline: none; resize: vertical;
+}
+.subsection-form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.subsection-form-select {
+  width: 100%; height: 38px; padding: 0 32px 0 12px; border-radius: 8px;
+  border: 1px solid var(--border-light); font-size: 13px; font-family: inherit;
+  color: var(--text-primary); background: var(--bg-card); outline: none;
+  cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+.subsection-form-save {
+  height: 38px; padding: 0 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: none; background: linear-gradient(180deg, #818cf8 0%, #4f46e5 100%);
+  color: #fff; box-shadow: 0 2px 0 #3730a3, 0 4px 12px rgba(99,102,241,0.3);
+  font-family: inherit; transition: all 0.15s ease; margin-top: 4px;
+}
+.subsection-form-save:hover { transform: translateY(1px); box-shadow: 0 1px 0 #3730a3, 0 2px 8px rgba(99,102,241,0.2); }
+.subsection-form-cancel {
+  height: 38px; padding: 0 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-secondary); font-family: inherit; transition: all 0.15s ease;
+}
+.subsection-form-cancel:hover { background: var(--bg-primary); border-color: rgba(0,0,0,0.2); }
+.subsection-form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">N</div>
+      <div>
+        <div class="sidebar-brand">NexAI 后台</div>
+        <div class="sidebar-brand-sub">管理系统</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- 首页 -->
+      <a class="nav-link active" data-page="home" onclick="navigateTo('home', this)">
+        <span class="nav-link-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </span>
+        首页
+      </a>
+
+      <!-- 课程维护 (expandable) -->
+      <div class="nav-item nav-parent" id="navParentCourse">
+        <button class="nav-link" onclick="toggleSubmenu('navParentCourse', this)">
+          <span class="nav-link-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </span>
+          课程维护
+          <span class="nav-link-arrow">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </span>
+        </button>
+        <div class="nav-submenu">
+          <a class="nav-subitem" data-page="course-list" data-parent="navParentCourse" onclick="navigateTo('course-list', this)">
+            课程维护
+          </a>
+          <a class="nav-subitem" data-page="question-bank" data-parent="navParentCourse" onclick="navigateTo('question-bank', this)">
+            习题库
+          </a>
+        </div>
+      </div>
+
+      <!-- 活动管理 -->
+      <a class="nav-link" data-page="activity" onclick="navigateTo('activity', this)">
+        <span class="nav-link-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </span>
+        活动管理
+      </a>
+
+      <!-- 作品审核 -->
+      <a class="nav-link" data-page="review" onclick="navigateTo('review', this)">
+        <span class="nav-link-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </span>
+        作品审核
+        <span class="nav-badge">12</span>
+      </a>
+
+      <!-- 系统管理 -->
+      <a class="nav-link" data-page="system" onclick="navigateTo('system', this)">
+        <span class="nav-link-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </span>
+        系统管理
+      </a>
+
+      <!-- 基础设施 -->
+      <a class="nav-link" data-page="infrastructure" onclick="navigateTo('infrastructure', this)">
+        <span class="nav-link-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        </span>
+        基础设施
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-avatar">管</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">管理员</div>
+        <div class="sidebar-user-role">超级管理员</div>
+      </div>
+      <button class="sidebar-logout" title="退出登录">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===== Main Content ===== -->
+  <main class="main-content">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="topbar-title" id="pageTitle">首页</h1>
+        <div class="topbar-breadcrumb">/ <span id="breadcrumb">概览</span></div>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn">导出报表</button>
+        <button class="topbar-btn topbar-btn-primary">+ 新建</button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="content-area">
+
+      <!-- ===== 首页 (Dashboard) ===== -->
+      <section class="page-section active" id="page-home">
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">课程总数</div>
+              <div class="stat-value">128</div>
+              <div class="stat-change stat-change--up">↑ 12% 较上月</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">进行中活动</div>
+              <div class="stat-value">8</div>
+              <div class="stat-change stat-change--up">↑ 3 个新活动</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--amber">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">待审核作品</div>
+              <div class="stat-value">12</div>
+              <div class="stat-change stat-change--down">↓ 5% 较昨日</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--cyan">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">平台用户</div>
+              <div class="stat-value">3,842</div>
+              <div class="stat-change stat-change--up">↑ 18% 较上月</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="content-grid">
+          <!-- Recent Courses Table -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">最近课程</div>
+                <div class="card-title-sub">近期更新的课程列表</div>
+              </div>
+              <button class="btn-sm btn-sm--primary" onclick="navigateTo('course-list', document.querySelector('[data-page=course-list]'))">查看全部</button>
+            </div>
+            <div class="card-body card-body--no-padding">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>课程名称</th><th>分类</th><th>状态</th><th>更新时间</th><th>操作</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="font-weight:600;">AI 绘画入门实战</td>
+                      <td>AI 技能</td>
+                      <td><span class="status-badge status-badge--active">已发布</span></td>
+                      <td>2026-06-17</td>
+                      <td><div class="actions"><button class="btn-sm">编辑</button><button class="btn-sm btn-sm--danger">下架</button></div></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight:600;">提示词工程精讲</td>
+                      <td>AI 基础</td>
+                      <td><span class="status-badge status-badge--active">已发布</span></td>
+                      <td>2026-06-15</td>
+                      <td><div class="actions"><button class="btn-sm">编辑</button><button class="btn-sm btn-sm--danger">下架</button></div></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight:600;">AI 产品经理实战</td>
+                      <td>职业转型</td>
+                      <td><span class="status-badge status-badge--draft">草稿</span></td>
+                      <td>2026-06-14</td>
+                      <td><div class="actions"><button class="btn-sm">编辑</button><button class="btn-sm btn-sm--danger">下架</button></div></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight:600;">大模型应用开发</td>
+                      <td>AI 开发</td>
+                      <td><span class="status-badge status-badge--active">已发布</span></td>
+                      <td>2026-06-12</td>
+                      <td><div class="actions"><button class="btn-sm">编辑</button><button class="btn-sm btn-sm--danger">下架</button></div></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight:600;">AI 数据分析入门</td>
+                      <td>AI 技能</td>
+                      <td><span class="status-badge status-badge--review">审核中</span></td>
+                      <td>2026-06-10</td>
+                      <td><div class="actions"><button class="btn-sm">编辑</button><button class="btn-sm btn-sm--danger">下架</button></div></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions / Recent Activity -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">待办事项</div>
+            </div>
+            <div class="card-body card-body--no-padding">
+              <div class="quick-list">
+                <div class="quick-list-item">
+                  <div class="quick-list-dot quick-list-dot--rose"></div>
+                  <div class="quick-list-info">
+                    <div class="quick-list-title">审核新提交作品</div>
+                    <div class="quick-list-desc">12 份作品待审核</div>
+                  </div>
+                  <div class="quick-list-time">10 分钟前</div>
+                </div>
+                <div class="quick-list-item">
+                  <div class="quick-list-dot quick-list-dot--amber"></div>
+                  <div class="quick-list-info">
+                    <div class="quick-list-title">更新课程"AI绘画入门"</div>
+                    <div class="quick-list-desc">第3章内容需补充</div>
+                  </div>
+                  <div class="quick-list-time">1 小时前</div>
+                </div>
+                <div class="quick-list-item">
+                  <div class="quick-list-dot quick-list-dot--blue"></div>
+                  <div class="quick-list-info">
+                    <div class="quick-list-title">发布新活动通知</div>
+                    <div class="quick-list-desc">6月线下共学活动</div>
+                  </div>
+                  <div class="quick-list-time">3 小时前</div>
+                </div>
+                <div class="quick-list-item">
+                  <div class="quick-list-dot quick-list-dot--green"></div>
+                  <div class="quick-list-info">
+                    <div class="quick-list-title">服务器维护计划</div>
+                    <div class="quick-list-desc">6月20日凌晨维护</div>
+                  </div>
+                  <div class="quick-list-time">昨天</div>
+                </div>
+                <div class="quick-list-item">
+                  <div class="quick-list-dot quick-list-dot--blue"></div>
+                  <div class="quick-list-info">
+                    <div class="quick-list-title">新增习题库</div>
+                    <div class="quick-list-desc">AI 基础题库需扩充</div>
+                  </div>
+                  <div class="quick-list-time">昨天</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 课程维护 (Course List) ===== -->
+      <section class="page-section" id="page-course-list">
+        <div class="filter-bar">
+          <input class="search-input" type="text" placeholder="搜索课程名称...">
+          <select class="filter-select">
+            <option value="">全部分类</option>
+            <option>AI 基础</option>
+            <option>AI 技能</option>
+            <option>AI 开发</option>
+            <option>职业转型</option>
+          </select>
+          <select class="filter-select">
+            <option value="">全部等级</option>
+            <option>初级</option>
+            <option>中级</option>
+            <option>高级</option>
+          </select>
+          <select class="filter-select">
+            <option value="">全部状态</option>
+            <option>已发布</option>
+            <option>未发布</option>
+            <option>审核中</option>
+          </select>
+          <button class="topbar-btn topbar-btn-primary" onclick="openCourseEditor()">+ 新增课程</button>
+        </div>
+        <div class="card">
+          <div class="card-body card-body--no-padding">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>序号</th><th>课程名称</th><th>等级</th><th>分类</th><th>标签</th><th>点赞数</th><th>学习人数</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td><td style="font-weight:600;">AI 绘画入门实战</td><td>初级</td><td>AI 技能</td>
+                    <td><span class="status-badge status-badge--active">热门</span> <span class="status-badge status-badge--review">新课</span></td>
+                    <td>1,245</td><td>3,820</td>
+                    <td><span class="status-badge status-badge--active">已发布</span></td><td>2026-05-12</td>
+                    <td><div class="actions"><button class="btn-sm" onclick="showMarkdownEditor('AI 绘画入门实战')">编辑课程</button><button class="btn-sm" onclick="showChapterModal(this)">章节维护</button><button class="btn-sm btn-sm--danger">删除</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>2</td><td style="font-weight:600;">提示词工程精讲</td><td>中级</td><td>AI 基础</td>
+                    <td><span class="status-badge status-badge--active">热门</span></td>
+                    <td>2,103</td><td>5,640</td>
+                    <td><span class="status-badge status-badge--active">已发布</span></td><td>2026-04-28</td>
+                    <td><div class="actions"><button class="btn-sm" onclick="showMarkdownEditor('提示词工程精讲')">编辑课程</button><button class="btn-sm" onclick="showChapterModal(this)">章节维护</button><button class="btn-sm btn-sm--danger">删除</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>3</td><td style="font-weight:600;">大模型应用开发</td><td>高级</td><td>AI 开发</td>
+                    <td><span class="status-badge status-badge--active">热门</span> <span class="status-badge status-badge--review">推荐</span></td>
+                    <td>876</td><td>2,310</td>
+                    <td><span class="status-badge status-badge--active">已发布</span></td><td>2026-03-15</td>
+                    <td><div class="actions"><button class="btn-sm" onclick="showMarkdownEditor('大模型应用开发')">编辑课程</button><button class="btn-sm" onclick="showChapterModal(this)">章节维护</button><button class="btn-sm btn-sm--danger">删除</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>4</td><td style="font-weight:600;">AI 产品经理实战</td><td>中级</td><td>职业转型</td>
+                    <td>&mdash;</td>
+                    <td>56</td><td>180</td>
+                    <td><span class="status-badge status-badge--draft">未发布</span></td><td>2026-06-01</td>
+                    <td><div class="actions"><button class="btn-sm" onclick="showMarkdownEditor('AI 产品经理实战')">编辑课程</button><button class="btn-sm" onclick="showChapterModal(this)">章节维护</button><button class="btn-sm btn-sm--danger">删除</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>5</td><td style="font-weight:600;">AI 数据分析入门</td><td>初级</td><td>AI 技能</td>
+                    <td><span class="status-badge status-badge--review">新课</span></td>
+                    <td>320</td><td>960</td>
+                    <td><span class="status-badge status-badge--review">审核中</span></td><td>2026-06-10</td>
+                    <td><div class="actions"><button class="btn-sm" onclick="showMarkdownEditor('AI 数据分析入门')">编辑课程</button><button class="btn-sm" onclick="showChapterModal(this)">章节维护</button><button class="btn-sm btn-sm--danger">删除</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span>共 128 条记录</span>
+              <div class="pagination-btns">
+                <button class="pagination-btn">←</button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">…</button>
+                <button class="pagination-btn">13</button>
+                <button class="pagination-btn">→</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 习题库 (Question Bank) ===== -->
+      <section class="page-section" id="page-question-bank">
+        <div class="filter-bar">
+          <input class="search-input" type="text" placeholder="搜索题库名称...">
+          <select class="filter-select">
+            <option value="">全部分类</option>
+            <option>AI 基础</option>
+            <option>AI 技能</option>
+            <option>AI 开发</option>
+            <option>职业转型</option>
+          </select>
+          <button class="topbar-btn topbar-btn-primary" onclick="createQuestionBank()">+ 创建题库</button>
+          <button class="topbar-btn topbar-btn-primary" onclick="openAssignmentEditor()">+ 创建实训作业</button>
+        </div>
+        <div class="card">
+          <div class="card-body card-body--no-padding">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>序号</th><th>题库名称</th><th>题目数量</th><th>分类</th><th>创建时间</th><th>操作</th></tr>
+                </thead>
+                <tbody id="questionBankTableBody">
+                  <tr>
+                    <td>1</td><td style="font-weight:600;">AI 基础概念题库</td><td>15</td><td>AI 基础</td><td>2026-06-10</td>
+                    <td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>2</td><td style="font-weight:600;">提示词工程练习题库</td><td>20</td><td>AI 技能</td><td>2026-06-12</td>
+                    <td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>3</td><td style="font-weight:600;">大模型开发实战题库</td><td>30</td><td>AI 开发</td><td>2026-06-15</td>
+                    <td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span>共 3 条记录</span>
+              <div class="pagination-btns">
+                <button class="pagination-btn">←</button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">→</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 章节维护 Modal ===== -->
+      <div class="chapter-modal-overlay" id="chapterModalOverlay">
+        <div class="chapter-modal">
+          <div class="chapter-modal-header">
+            <span class="chapter-modal-title" id="chapterModalTitle">章节维护</span>
+            <div class="chapter-modal-header-right">
+              <button class="chapter-modal-add-btn" onclick="addChapter()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                新增章节
+              </button>
+              <button class="chapter-modal-close" onclick="closeChapterModal()" title="关闭">✕</button>
+            </div>
+          </div>
+          <div class="chapter-modal-body">
+            <div class="card-body card-body--no-padding">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>序号</th><th>章节标题</th><th>描述</th><th>排序号</th><th>创建时间</th><th>操作</th></tr>
+                  </thead>
+                  <tbody id="chapterTableBody">
+                    <tr class="chapter-row" data-chapter-name="课程介绍与概览" onclick="toggleChapterExpand(this)">
+                      <td>1</td>
+                      <td style="font-weight:600;"><span class="chapter-expand-arrow">▶</span>课程介绍与概览</td>
+                      <td>了解课程目标、学习路径和预备知识</td><td>1</td><td>2026-05-12</td>
+                      <td><div class="actions"><button class="btn-sm" onclick="event.stopPropagation()">编辑</button><button class="btn-sm" onclick="event.stopPropagation();showSubsectionModal(this)">新增小节</button><button class="btn-sm btn-sm--danger" onclick="event.stopPropagation()">删除章节</button></div></td>
+                    </tr>
+                    <tr class="chapter-subsections-row" data-for-chapter="课程介绍与概览"><td colspan="6"></td></tr>
+                    <tr class="chapter-row" data-chapter-name="基础概念入门" onclick="toggleChapterExpand(this)">
+                      <td>2</td>
+                      <td style="font-weight:600;"><span class="chapter-expand-arrow">▶</span>基础概念入门</td>
+                      <td>掌握核心术语和基础理论知识</td><td>2</td><td>2026-05-13</td>
+                      <td><div class="actions"><button class="btn-sm" onclick="event.stopPropagation()">编辑</button><button class="btn-sm" onclick="event.stopPropagation();showSubsectionModal(this)">新增小节</button><button class="btn-sm btn-sm--danger" onclick="event.stopPropagation()">删除章节</button></div></td>
+                    </tr>
+                    <tr class="chapter-subsections-row" data-for-chapter="基础概念入门"><td colspan="6"></td></tr>
+                    <tr class="chapter-row" data-chapter-name="实战项目演练" onclick="toggleChapterExpand(this)">
+                      <td>3</td>
+                      <td style="font-weight:600;"><span class="chapter-expand-arrow">▶</span>实战项目演练</td>
+                      <td>通过实际项目巩固所学知识</td><td>3</td><td>2026-05-15</td>
+                      <td><div class="actions"><button class="btn-sm" onclick="event.stopPropagation()">编辑</button><button class="btn-sm" onclick="event.stopPropagation();showSubsectionModal(this)">新增小节</button><button class="btn-sm btn-sm--danger" onclick="event.stopPropagation()">删除章节</button></div></td>
+                    </tr>
+                    <tr class="chapter-subsections-row" data-for-chapter="实战项目演练"><td colspan="6"></td></tr>
+                    <tr class="chapter-row" data-chapter-name="进阶技巧解析" onclick="toggleChapterExpand(this)">
+                      <td>4</td>
+                      <td style="font-weight:600;"><span class="chapter-expand-arrow">▶</span>进阶技巧解析</td>
+                      <td>深入学习高级功能与最佳实践</td><td>4</td><td>2026-05-18</td>
+                      <td><div class="actions"><button class="btn-sm" onclick="event.stopPropagation()">编辑</button><button class="btn-sm" onclick="event.stopPropagation();showSubsectionModal(this)">新增小节</button><button class="btn-sm btn-sm--danger" onclick="event.stopPropagation()">删除章节</button></div></td>
+                    </tr>
+                    <tr class="chapter-subsections-row" data-for-chapter="进阶技巧解析"><td colspan="6"></td></tr>
+                    <tr class="chapter-row" data-chapter-name="总结与作品产出" onclick="toggleChapterExpand(this)">
+                      <td>5</td>
+                      <td style="font-weight:600;"><span class="chapter-expand-arrow">▶</span>总结与作品产出</td>
+                      <td>回顾知识体系并完成结课作品</td><td>5</td><td>2026-05-20</td>
+                      <td><div class="actions"><button class="btn-sm" onclick="event.stopPropagation()">编辑</button><button class="btn-sm" onclick="event.stopPropagation();showSubsectionModal(this)">新增小节</button><button class="btn-sm btn-sm--danger" onclick="event.stopPropagation()">删除章节</button></div></td>
+                    </tr>
+                    <tr class="chapter-subsections-row" data-for-chapter="总结与作品产出"><td colspan="6"></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 新增小节 Modal ===== -->
+      <div class="subsection-modal-overlay" id="subsectionModalOverlay">
+        <div class="subsection-modal">
+          <div class="subsection-modal-header">
+            <span class="subsection-modal-title" id="subsectionModalTitle">新增小节</span>
+            <button class="subsection-modal-close" onclick="closeSubsectionModal()" title="关闭">✕</button>
+          </div>
+          <div class="subsection-modal-body">
+            <!-- Left: Markdown Editor -->
+            <div class="subsection-md-wrap">
+              <div class="subsection-md-toolbar">
+                <button onclick="undoSubsectionMd()" title="撤销">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button onclick="redoSubsectionMd()" title="重做">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <span class="toolbar-sep"></span>
+                <button onclick="toggleUploadZone('image')" title="上传图片">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  图片
+                </button>
+                <button onclick="toggleUploadZone('video')" title="上传视频">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                  视频
+                </button>
+                <span class="toolbar-sep"></span>
+                <div class="exercise-dropdown-wrap" id="exerciseDropdownWrap">
+                  <button onclick="toggleExerciseDropdown()" title="插入习题">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    习题
+                  </button>
+                  <div class="exercise-dropdown-menu" id="exerciseDropdownMenu">
+                    <button class="exercise-dropdown-item" onclick="insertExerciseTemplate('single')">🔘 单选题</button>
+                    <button class="exercise-dropdown-item" onclick="insertExerciseTemplate('multiple')">☑️ 多选题</button>
+                    <button class="exercise-dropdown-item" onclick="insertExerciseTemplate('short')">📝 简答题</button>
+                  </div>
+                </div>
+              </div>
+              <div class="subsection-upload-zone" id="subsectionUploadZone">
+                <div class="subsection-upload-icon" id="uploadZoneIcon">🖼️</div>
+                <div class="subsection-upload-text" id="uploadZoneText">点击或拖拽上传图片</div>
+                <div class="subsection-upload-hint" id="uploadZoneHint">支持 JPG / PNG / GIF，最大 10MB</div>
+                <input type="file" id="subsectionFileInput" accept="image/*" onchange="handleUploadFile(this)">
+              </div>
+              <div class="quiz-editor-wrap">
+                <!-- Saved Quiz Cards -->
+                <div class="saved-quizzes-container" id="savedQuizzesContainer"></div>
+                <!-- Quiz Editor Panel -->
+                <div class="quiz-editor-panel" id="quizEditorPanel">
+                  <div class="quiz-editor-header">
+                    <span>🔘 单选题编辑</span>
+                    <button class="quiz-editor-close" onclick="closeQuizEditor()" title="关闭">✕</button>
+                  </div>
+                  <div class="quiz-editor-body">
+                    <div class="quiz-field">
+                      <label>题目</label>
+                      <input class="quiz-question-input" id="quizQuestion" type="text" placeholder="请输入题目">
+                    </div>
+                    <div class="quiz-field" id="quizOptionsField">
+                      <label>
+                        选项
+                        <button class="quiz-add-btn" onclick="addQuizOption()">+ 添加选项</button>
+                      </label>
+                      <div class="quiz-options-list" id="quizOptionsList">
+                        <!-- dynamically filled -->
+                      </div>
+                    </div>
+                  </div>
+                  <div class="quiz-editor-footer">
+                    <button class="quiz-cancel-btn" onclick="closeQuizEditor()">取消</button>
+                    <button class="quiz-save-btn" onclick="saveQuiz()">保存</button>
+                  </div>
+                  <!-- Validation Error Overlay -->
+                  <div class="quiz-error-overlay" id="quizErrorOverlay">
+                    <div class="quiz-error-dialog">
+                      <div class="quiz-error-icon">⚠️</div>
+                      <div class="quiz-error-msg" id="quizErrorMsg">保存失败</div>
+                      <div class="quiz-error-detail" id="quizErrorDetail"></div>
+                      <button class="quiz-error-btn" onclick="closeQuizError()">继续编辑</button>
+                    </div>
+                  </div>
+                </div>
+                <textarea class="subsection-md-editor" id="subsectionMdInput" placeholder="在此编写小节内容（支持 Markdown）..."></textarea>
+              </div>
+            </div>
+            <!-- Right: Form -->
+            <div class="subsection-form">
+              <div class="subsection-form-group">
+                <label class="subsection-form-label">小节信息 <small>简要描述</small></label>
+                <textarea class="subsection-form-textarea" id="subInfo" placeholder="输入小节简要描述..."></textarea>
+              </div>
+              <div class="subsection-form-group">
+                <label class="subsection-form-label">所属章节</label>
+                <select class="subsection-form-select" id="subChapter">
+                  <option value="">请选择所属章节</option>
+                  <option>课程介绍与概览</option>
+                  <option>基础概念入门</option>
+                  <option>实战项目演练</option>
+                  <option>进阶技巧解析</option>
+                  <option>总结与作品产出</option>
+                </select>
+              </div>
+              <div class="subsection-form-group">
+                <label class="subsection-form-label">小节名称</label>
+                <input class="subsection-form-input" id="subName" type="text" placeholder="输入小节名称">
+              </div>
+              <div class="subsection-form-group">
+                <label class="subsection-form-label">排序号</label>
+                <input class="subsection-form-input" id="subOrder" type="number" placeholder="输入排序号" value="1" min="1">
+              </div>
+              <div class="subsection-form-group">
+                <label class="subsection-form-label">关联题库</label>
+                <select class="subsection-form-select" id="subQuestionBank">
+                  <option value="">请选择题库（可选）</option>
+                  <option>AI 基础概念题库</option>
+                  <option>提示词工程练习题库</option>
+                  <option>大模型开发实战题库</option>
+                </select>
+              </div>
+              <div class="subsection-form-actions">
+                <button class="subsection-form-cancel" onclick="closeSubsectionModal()">取消</button>
+                <button class="subsection-form-save" onclick="saveSubsection()">保存小节</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 活动管理 ===== -->
+      <section class="page-section" id="page-activity">
+        <div class="filter-bar">
+          <input class="search-input" type="text" placeholder="搜索活动...">
+          <select class="filter-select">
+            <option value="">全部状态</option>
+            <option>进行中</option>
+            <option>已结束</option>
+            <option>未开始</option>
+          </select>
+          <button class="topbar-btn topbar-btn-primary">+ 新建活动</button>
+        </div>
+        <div class="card">
+          <div class="card-body card-body--no-padding">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>活动名称</th><th>类型</th><th>参与人数</th><th>开始时间</th><th>状态</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-weight:600;">6月AI共学实训营</td><td>共学实训</td><td>256</td><td>2026-06-20</td>
+                    <td><span class="status-badge status-badge--draft">未开始</span></td>
+                    <td><div class="actions"><button class="btn-sm">编辑</button><button class="btn-sm">详情</button><button class="btn-sm btn-sm--danger">取消</button></div></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;">AI作品集冲刺周</td><td>赛事</td><td>512</td><td>2026-06-01</td>
+                    <td><span class="status-badge status-badge--active">进行中</span></td>
+                    <td><div class="actions"><button class="btn-sm">编辑</button><button class="btn-sm">详情</button><button class="btn-sm btn-sm--danger">取消</button></div></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;">5月AI绘画大赛</td><td>赛事</td><td>389</td><td>2026-05-15</td>
+                    <td><span class="status-badge status-badge--inactive">已结束</span></td>
+                    <td><div class="actions"><button class="btn-sm">查看</button><button class="btn-sm">复盘</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span>共 24 条记录</span>
+              <div class="pagination-btns">
+                <button class="pagination-btn">←</button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">→</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 作品审核 ===== -->
+      <section class="page-section" id="page-review">
+        <div class="filter-bar">
+          <input class="search-input" type="text" placeholder="搜索作品/作者...">
+          <select class="filter-select">
+            <option value="">全部状态</option>
+            <option>待审核</option>
+            <option>已通过</option>
+            <option>已驳回</option>
+          </select>
+          <button class="topbar-btn topbar-btn-primary">批量审核</button>
+        </div>
+        <div class="card">
+          <div class="card-body card-body--no-padding">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>作品名称</th><th>作者</th><th>所属课程</th><th>提交时间</th><th>状态</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-weight:600;">AI 生成电商海报合集</td><td>张三</td><td>AI 绘画入门实战</td><td>2026-06-17</td>
+                    <td><span class="status-badge status-badge--review">待审核</span></td>
+                    <td><div class="actions"><button class="btn-sm btn-sm--primary">通过</button><button class="btn-sm btn-sm--danger">驳回</button><button class="btn-sm">查看</button></div></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;">智能客服对话系统</td><td>李四</td><td>大模型应用开发</td><td>2026-06-16</td>
+                    <td><span class="status-badge status-badge--review">待审核</span></td>
+                    <td><div class="actions"><button class="btn-sm btn-sm--primary">通过</button><button class="btn-sm btn-sm--danger">驳回</button><button class="btn-sm">查看</button></div></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;">Prompt模板库</td><td>王五</td><td>提示词工程精讲</td><td>2026-06-15</td>
+                    <td><span class="status-badge status-badge--active">已通过</span></td>
+                    <td><div class="actions"><button class="btn-sm">查看</button><button class="btn-sm btn-sm--danger">撤回</button></div></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;">AI 数据分析仪表盘</td><td>赵六</td><td>AI 数据分析入门</td><td>2026-06-14</td>
+                    <td><span class="status-badge status-badge--draft">已驳回</span></td>
+                    <td><div class="actions"><button class="btn-sm">查看</button><button class="btn-sm">反馈</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span>共 86 条记录，12 条待审核</span>
+              <div class="pagination-btns">
+                <button class="pagination-btn">←</button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">…</button>
+                <button class="pagination-btn">9</button>
+                <button class="pagination-btn">→</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 系统管理 ===== -->
+      <section class="page-section" id="page-system">
+        <div class="stats-grid" style="margin-bottom:28px;">
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">管理员账户</div>
+              <div class="stat-value">5</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">角色权限组</div>
+              <div class="stat-value">8</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--amber">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">操作日志</div>
+              <div class="stat-value">2,431</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--cyan">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">系统运行</div>
+              <div class="stat-value" style="font-size:22px;">正常</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">管理员列表</div></div>
+          <div class="card-body card-body--no-padding">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>用户名</th><th>角色</th><th>邮箱</th><th>最后登录</th><th>状态</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td style="font-weight:600;">管理员</td><td>超级管理员</td><td>admin@nexai.com</td><td>2026-06-18 10:30</td><td><span class="status-badge status-badge--active">在线</span></td><td><div class="actions"><button class="btn-sm">编辑</button><button class="btn-sm btn-sm--danger">禁用</button></div></td></tr>
+                  <tr><td style="font-weight:600;">课程编辑</td><td>内容管理员</td><td>editor@nexai.com</td><td>2026-06-17 14:20</td><td><span class="status-badge status-badge--inactive">离线</span></td><td><div class="actions"><button class="btn-sm">编辑</button><button class="btn-sm btn-sm--danger">禁用</button></div></td></tr>
+                  <tr><td style="font-weight:600;">审核员</td><td>审核管理员</td><td>review@nexai.com</td><td>2026-06-18 09:15</td><td><span class="status-badge status-badge--active">在线</span></td><td><div class="actions"><button class="btn-sm">编辑</button><button class="btn-sm btn-sm--danger">禁用</button></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 基础设施 ===== -->
+      <section class="page-section" id="page-infrastructure">
+        <div class="stats-grid" style="margin-bottom:28px;">
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">服务器状态</div>
+              <div class="stat-value" style="font-size:22px;color:var(--green);">运行中</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">数据库</div>
+              <div class="stat-value" style="font-size:22px;">正常</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--cyan">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">CDN 加速</div>
+              <div class="stat-value" style="font-size:22px;">正常</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--amber">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">缓存命中率</div>
+              <div class="stat-value">94.2%</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">服务监控</div></div>
+          <div class="card-body card-body--no-padding">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>服务名称</th><th>地址</th><th>端口</th><th>状态</th><th>响应时间</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td style="font-weight:600;">API 网关</td><td>api.nexai.com</td><td>443</td><td><span class="status-badge status-badge--active">正常</span></td><td>12ms</td><td><div class="actions"><button class="btn-sm">重启</button><button class="btn-sm">日志</button></div></td></tr>
+                  <tr><td style="font-weight:600;">数据库服务</td><td>db.internal</td><td>5432</td><td><span class="status-badge status-badge--active">正常</span></td><td>3ms</td><td><div class="actions"><button class="btn-sm">重启</button><button class="btn-sm">日志</button></div></td></tr>
+                  <tr><td style="font-weight:600;">Redis 缓存</td><td>cache.internal</td><td>6379</td><td><span class="status-badge status-badge--active">正常</span></td><td>1ms</td><td><div class="actions"><button class="btn-sm">重启</button><button class="btn-sm">日志</button></div></td></tr>
+                  <tr><td style="font-weight:600;">文件存储</td><td>storage.internal</td><td>9000</td><td><span class="status-badge status-badge--active">正常</span></td><td>8ms</td><td><div class="actions"><button class="btn-sm">重启</button><button class="btn-sm">日志</button></div></td></tr>
+                  <tr><td style="font-weight:600;">消息队列</td><td>mq.internal</td><td>5672</td><td><span class="status-badge status-badge--draft">延迟</span></td><td>240ms</td><td><div class="actions"><button class="btn-sm">重启</button><button class="btn-sm">日志</button></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Markdown 编辑器 Modal ===== -->
+      <div class="md-modal-overlay" id="mdModalOverlay">
+        <div class="md-modal">
+          <div class="md-modal-header">
+            <span class="md-modal-title" id="mdModalTitle">编辑课程</span>
+            <button class="md-modal-close" onclick="closeMarkdownEditor()" title="关闭">✕</button>
+          </div>
+          <div class="markdown-editor-wrap">
+            <div class="markdown-editor-toolbar">
+              <button onclick="insertImage()" title="插入图片">🖼 图片</button>
+              <button onclick="insertVideo()" title="插入视频">🎬 视频</button>
+              <span class="toolbar-sep"></span>
+              <button id="mdSaveBtn" class="btn-sm btn-sm--primary" onclick="saveMarkdown()">保存</button>
+            </div>
+            <div class="markdown-editor-body">
+              <textarea class="markdown-editor-input" id="mdInput" placeholder="在此编写课程介绍内容（支持 Markdown）..."></textarea>
+              <div class="activity-info-panel">
+                <div class="activity-info-panel-title">活动信息</div>
+                <div class="activity-field">
+                  <label for="activityTitle">活动标题</label>
+                  <input type="text" id="activityTitle" placeholder="请输入活动标题" />
+                </div>
+                <div class="activity-field">
+                  <label for="activityCover">活动封面</label>
+                  <input type="text" id="activityCover" placeholder="请输入封面图片 URL" oninput="updateCoverPreview()" />
+                  <div class="activity-cover-preview" id="coverPreview">
+                    <span>图片预览区域</span>
+                  </div>
+                </div>
+                <div class="activity-field">
+                  <label for="activityTime">活动时间</label>
+                  <input type="datetime-local" id="activityTime" />
+                </div>
+                <div class="activity-field">
+                  <label for="activityLocation">活动地点</label>
+                  <input type="text" id="activityLocation" placeholder="请输入活动地点" />
+                </div>
+                <div class="activity-field">
+                  <label for="activityCapacity">报名人数</label>
+                  <input type="number" id="activityCapacity" placeholder="请输入报名人数上限" min="1" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 课程编辑器 Modal ===== -->
+      <div class="md-modal-overlay" id="courseEditorOverlay">
+        <div class="md-modal">
+          <div class="md-modal-header">
+            <span class="md-modal-title" id="courseEditorTitle">新增课程</span>
+            <button class="md-modal-close" onclick="closeCourseEditor()" title="关闭">✕</button>
+          </div>
+          <div class="markdown-editor-wrap">
+            <div class="markdown-editor-toolbar">
+              <button onclick="insertCourseImage()" title="插入图片">🖼 图片</button>
+              <button onclick="insertCourseVideo()" title="插入视频">🎬 视频</button>
+              <span class="toolbar-sep"></span>
+              <button id="courseSaveBtn" class="btn-sm btn-sm--primary" onclick="saveCourse()">保存</button>
+            </div>
+            <div class="markdown-editor-body">
+              <textarea class="markdown-editor-input" id="courseMdInput" placeholder="在此编写课程介绍内容（支持 Markdown）..."></textarea>
+              <div class="activity-info-panel">
+                <div class="activity-info-panel-title">课程信息</div>
+                <div class="activity-field">
+                  <label for="courseName">课程名称</label>
+                  <input type="text" id="courseName" placeholder="请输入课程名称" />
+                </div>
+                <div class="activity-field">
+                  <label for="courseCover">课程封面</label>
+                  <input type="text" id="courseCover" placeholder="请输入封面图片 URL" oninput="updateCourseCoverPreview()" />
+                  <div class="activity-cover-preview" id="courseCoverPreview">
+                    <span>图片预览区域</span>
+                  </div>
+                </div>
+                <div class="activity-field">
+                  <label for="courseDesc">课程描述</label>
+                  <textarea id="courseDesc" rows="3" placeholder="请输入课程简要描述"></textarea>
+                </div>
+                <div class="activity-field">
+                  <label for="courseLevel">课程等级</label>
+                  <select id="courseLevel">
+                    <option value="">请选择等级</option>
+                    <option>初级</option>
+                    <option>中级</option>
+                    <option>高级</option>
+                  </select>
+                </div>
+                <div class="activity-field">
+                  <label for="courseCategory">课程分类</label>
+                  <select id="courseCategory">
+                    <option value="">请选择分类</option>
+                    <option>AI 基础</option>
+                    <option>AI 技能</option>
+                    <option>AI 开发</option>
+                    <option>职业转型</option>
+                  </select>
+                </div>
+                <div class="activity-field">
+                  <label for="courseTags">课程标签</label>
+                  <input type="text" id="courseTags" placeholder="多个标签用逗号分隔，如：热门,新课,推荐" />
+                </div>
+                <div class="activity-field">
+                  <label for="courseAssignment">关联实训作业</label>
+                  <select id="courseAssignment">
+                    <option value="">请选择关联作业</option>
+                    <option>AI 绘画实战作业</option>
+                    <option>提示词工程练习</option>
+                    <option>大模型 API 调用实践</option>
+                    <option>产品需求文档撰写</option>
+                    <option>数据分析报告</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 习题库编辑器 Modal ===== -->
+      <div class="md-modal-overlay" id="qbEditorOverlay">
+        <div class="md-modal">
+          <div class="md-modal-header">
+            <span class="md-modal-title" id="qbEditorTitle">编辑题库</span>
+            <button class="md-modal-close" onclick="closeQuestionBankEditor()" title="关闭">✕</button>
+          </div>
+          <div class="qb-editor-body">
+            <!-- Left: Quiz Area -->
+            <div class="qb-left-panel">
+              <div class="qb-type-selector">
+                <button class="qb-type-btn" data-qb-type="single" onclick="qbOpenQuizEditor('single')">🔘 单选题</button>
+                <button class="qb-type-btn" data-qb-type="multiple" onclick="qbOpenQuizEditor('multiple')">🟡 多选题</button>
+                <button class="qb-type-btn" data-qb-type="short" onclick="qbOpenQuizEditor('short')">📝 简答题</button>
+              </div>
+              <div class="quiz-editor-wrap">
+                <div class="saved-quizzes-container" id="qbSavedQuizzesContainer"></div>
+                <div class="quiz-editor-panel" id="qbQuizEditorPanel">
+                  <div class="quiz-editor-header">
+                    <span>🔘 单选题编辑</span>
+                    <button class="quiz-editor-close" onclick="qbCloseQuizEditor()" title="关闭">✕</button>
+                  </div>
+                  <div class="quiz-editor-body">
+                    <div class="quiz-field">
+                      <label>题目</label>
+                      <input class="quiz-question-input" id="qbQuizQuestion" type="text" placeholder="请输入题目">
+                    </div>
+                    <div class="quiz-field" id="qbQuizOptionsField">
+                      <label>
+                        选项
+                        <button class="quiz-add-btn" onclick="qbAddQuizOption()">+ 添加选项</button>
+                      </label>
+                      <div class="quiz-options-list" id="qbQuizOptionsList"></div>
+                    </div>
+                  </div>
+                  <div class="quiz-editor-footer">
+                    <button class="quiz-cancel-btn" onclick="qbCloseQuizEditor()">取消</button>
+                    <button class="quiz-save-btn" onclick="qbSaveQuiz()">保存</button>
+                  </div>
+                  <div class="quiz-error-overlay" id="qbQuizErrorOverlay">
+                    <div class="quiz-error-dialog">
+                      <div class="quiz-error-icon">⚠️</div>
+                      <div class="quiz-error-msg" id="qbQuizErrorMsg">保存失败</div>
+                      <div class="quiz-error-detail" id="qbQuizErrorDetail"></div>
+                      <button class="quiz-error-btn" onclick="qbCloseQuizError()">继续编辑</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Right: Bank Info -->
+            <div class="activity-info-panel">
+              <div class="activity-info-panel-title">题库信息</div>
+              <div class="activity-field">
+                <label for="qbName">题库名称</label>
+                <input type="text" id="qbName" placeholder="请输入题库名称" />
+              </div>
+              <div class="activity-field">
+                <label for="qbCategory">题库分类</label>
+                <select id="qbCategory">
+                  <option value="">请选择分类</option>
+                  <option>AI 基础</option>
+                  <option>AI 技能</option>
+                  <option>AI 开发</option>
+                  <option>职业转型</option>
+                </select>
+              </div>
+              <div class="activity-field">
+                <label for="qbDesc">题库描述</label>
+                <textarea id="qbDesc" rows="3" placeholder="请输入题库描述"></textarea>
+              </div>
+              <button class="btn-sm btn-sm--primary" onclick="saveQuestionBank()" style="width:100%;margin-top:4px;">保存题库</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 实训作业编辑器 Modal ===== -->
+      <div class="md-modal-overlay" id="assignmentEditorOverlay">
+        <div class="md-modal">
+          <div class="md-modal-header">
+            <span class="md-modal-title" id="assignmentEditorTitle">创建实训作业</span>
+            <button class="md-modal-close" onclick="closeAssignmentEditor()" title="关闭">✕</button>
+          </div>
+          <div class="assignment-editor-body">
+            <!-- Left: Questions Area -->
+            <div class="assignment-left-panel">
+              <div class="assignment-questions-header">
+                <span>📝 题目列表</span>
+                <button class="assignment-add-btn" onclick="addAssignmentQuestion()" title="新增题目">+</button>
+              </div>
+              <div class="assignment-questions-list" id="assignmentQuestionsList">
+                <!-- dynamically filled -->
+              </div>
+            </div>
+            <!-- Right: Assignment Info -->
+            <div class="activity-info-panel">
+              <div class="activity-info-panel-title">作品信息</div>
+              <div class="activity-field">
+                <label for="assignmentTitle">作品标题</label>
+                <input type="text" id="assignmentTitle" placeholder="请输入作品标题" />
+              </div>
+              <div class="activity-field">
+                <label for="assignmentCover">作品封面</label>
+                <input type="text" id="assignmentCover" placeholder="请输入封面图片 URL" oninput="updateAssignmentCoverPreview()" />
+                <div class="activity-cover-preview" id="assignmentCoverPreview">
+                  <span>图片预览区域</span>
+                </div>
+              </div>
+              <div class="activity-field">
+                <label for="assignmentCategory">分类</label>
+                <select id="assignmentCategory">
+                  <option value="">请选择分类</option>
+                  <option>AI 基础</option>
+                  <option>AI 技能</option>
+                  <option>AI 开发</option>
+                  <option>职业转型</option>
+                </select>
+              </div>
+              <div class="activity-field">
+                <label for="assignmentTags">标签</label>
+                <input type="text" id="assignmentTags" placeholder="多个标签用逗号分隔" />
+              </div>
+              <div class="activity-field">
+                <label for="assignmentAttachment">附件</label>
+                <div class="assignment-file-zone" id="assignmentFileZone" onclick="document.getElementById('assignmentFileInput').click()">
+                  <div class="assignment-file-icon">📎</div>
+                  <div class="assignment-file-text">点击上传附件</div>
+                  <div class="assignment-file-hint">支持 ZIP / PDF / DOCX / MP4 / MOV 等格式</div>
+                  <div class="assignment-file-list" id="assignmentFileList"></div>
+                </div>
+                <input type="file" id="assignmentFileInput" onchange="handleAssignmentFile(this)" style="display:none" multiple accept=".zip,.pdf,.docx,.mp4,.mov,.jpg,.png,.gif,.webm,.avi,.mkv,.ppt,.pptx,.xls,.xlsx,.txt,.csv">
+              </div>
+              <button class="btn-sm btn-sm--primary" onclick="saveAssignment()" style="width:100%;margin-top:4px;">保存作业</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+// ===== Navigation =====
+const pageTitles = {
+  'home': '首页',
+  'course-list': '课程维护',
+  'question-bank': '习题库',
+  'activity': '活动管理',
+  'review': '作品审核',
+  'system': '系统管理',
+  'infrastructure': '基础设施'
+};
+const breadcrumbs = {
+  'home': '概览',
+  'course-list': '课程维护 / 课程列表',
+  'question-bank': '课程维护 / 习题库',
+  'activity': '活动管理 / 活动列表',
+  'review': '作品审核 / 审核列表',
+  'system': '系统管理 / 管理员与权限',
+  'infrastructure': '基础设施 / 服务监控'
+};
+
+function navigateTo(page, el) {
+  // Deactivate all sections
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+
+  // Activate target section
+  const target = document.getElementById('page-' + page);
+  if (target) target.classList.add('active');
+
+  // Update all nav links (top-level)
+  document.querySelectorAll('.nav-link[data-page]').forEach(link => link.classList.remove('active'));
+
+  // Update all sub-items
+  document.querySelectorAll('.nav-subitem').forEach(item => item.classList.remove('active'));
+
+  // Activate the clicked element
+  el.classList.add('active');
+
+  // If this is a sub-item, also expand and highlight the parent
+  const parentId = el.getAttribute('data-parent');
+  if (parentId) {
+    const parent = document.getElementById(parentId);
+    if (parent) parent.classList.add('expanded');
+    // Also activate the parent's nav-link
+    const parentLink = parent.querySelector(':scope > .nav-link');
+    if (parentLink) parentLink.classList.add('active');
+  }
+
+  // If a top-level link is clicked and it's part of a nav-parent, also highlight it
+  const parentNav = el.closest('.nav-parent');
+  if (parentNav && !el.getAttribute('data-parent')) {
+    // Top-level link inside a parent — expand the parent
+    parentNav.classList.add('expanded');
+    // Activate the first sub-item by default if none active
+    const firstSub = parentNav.querySelector('.nav-subitem');
+    if (firstSub && !parentNav.querySelector('.nav-subitem.active')) {
+      firstSub.classList.add('active');
+    }
+  }
+
+  // Update title and breadcrumb
+  document.getElementById('pageTitle').textContent = pageTitles[page] || page;
+  document.getElementById('breadcrumb').textContent = breadcrumbs[page] || page;
+
+  // Scroll to top
+  document.querySelector('.content-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ===== Submenu Toggle =====
+function toggleSubmenu(parentId, btn) {
+  const parent = document.getElementById(parentId);
+  parent.classList.toggle('expanded');
+
+  // If collapsing and a sub-item was active, keep the parent visually activated
+  if (!parent.classList.contains('expanded')) {
+    const hasActiveSub = parent.querySelector('.nav-subitem.active');
+    if (hasActiveSub) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  }
+}
+
+// ===== Subsection Modal =====
+function showSubsectionModal(btn) {
+  // Find chapter name from the chapter row's data attribute
+  const chapterRow = btn.closest('.chapter-row');
+  const chapterName = chapterRow ? chapterRow.getAttribute('data-chapter-name') : '';
+
+  editingSubsection = null;
+  document.getElementById('subsectionModalTitle').textContent = '新增小节' + (chapterName ? ' — ' + chapterName : '');
+
+  // Pre-select the chapter if it matches
+  const select = document.getElementById('subChapter');
+  for (let i = 0; i < select.options.length; i++) {
+    if (select.options[i].text === chapterName) { select.selectedIndex = i; break; }
+  }
+
+  // Clear fields
+  document.getElementById('subInfo').value = '';
+  document.getElementById('subName').value = '';
+  document.getElementById('subOrder').value = '1';
+  document.getElementById('subQuestionBank').value = '';
+  document.getElementById('subsectionMdInput').value = '';
+  document.getElementById('savedQuizzesContainer').innerHTML = '';
+  closeQuizEditor();
+
+  document.getElementById('subsectionModalOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function toggleExerciseDropdown() {
+  const menu = document.getElementById('exerciseDropdownMenu');
+  menu.classList.toggle('active');
+}
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('exerciseDropdownWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('exerciseDropdownMenu').classList.remove('active');
+  }
+});
+
+function insertExerciseTemplate(type) {
+  if (type === 'single' || type === 'multiple' || type === 'short') {
+    openQuizEditor(type);
+  }
+  document.getElementById('exerciseDropdownMenu').classList.remove('active');
+}
+
+// ===== Quiz Editor =====
+const QUIZ_OPTION_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+let currentQuizType = 'single'; // 'single' | 'multiple'
+
+function openQuizEditor(type) {
+  currentQuizType = type || 'single';
+  const panel = document.getElementById('quizEditorPanel');
+  const list = document.getElementById('quizOptionsList');
+  const optionsField = document.getElementById('quizOptionsField');
+  document.getElementById('quizQuestion').value = '';
+  list.innerHTML = '';
+
+  // Update header
+  const header = panel.querySelector('.quiz-editor-header span');
+  if (currentQuizType === 'multiple') {
+    header.textContent = '🟡 多选题编辑';
+  } else if (currentQuizType === 'short') {
+    header.textContent = '📝 简答题编辑';
+  } else {
+    header.textContent = '🔘 单选题编辑';
+  }
+
+  // Show/hide options field
+  if (currentQuizType === 'short') {
+    optionsField.style.display = 'none';
+  } else {
+    optionsField.style.display = '';
+    // Start with 2 empty options
+    for (let i = 0; i < 2; i++) {
+      addQuizOption();
+    }
+  }
+  panel.classList.add('active');
+}
+
+function closeQuizEditor() {
+  document.getElementById('quizEditorPanel').classList.remove('active');
+  document.getElementById('quizErrorOverlay').classList.remove('active');
+}
+
+function addQuizOption() {
+  const list = document.getElementById('quizOptionsList');
+  const index = list.children.length;
+  const letter = QUIZ_OPTION_LETTERS[index] || String(index + 1);
+  const row = document.createElement('div');
+  row.className = 'quiz-option-row';
+  row.innerHTML =
+    '<span class="quiz-option-letter">' + letter + '</span>' +
+    '<input class="quiz-option-input" type="text" placeholder="选项 ' + letter + '" onfocus="event.stopPropagation()">' +
+    '<button class="quiz-option-delete" onclick="deleteQuizOption(this, event)" title="删除选项">×</button>';
+  row.addEventListener('click', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+    selectCorrectOption(row);
+  });
+  list.appendChild(row);
+  // Focus the new input
+  setTimeout(() => {
+    const input = row.querySelector('.quiz-option-input');
+    if (input) input.focus();
+  }, 50);
+}
+
+function deleteQuizOption(btn, event) {
+  event.stopPropagation();
+  const row = btn.closest('.quiz-option-row');
+  row.remove();
+  // Re-letter remaining options
+  const list = document.getElementById('quizOptionsList');
+  Array.from(list.children).forEach((row, i) => {
+    row.querySelector('.quiz-option-letter').textContent = QUIZ_OPTION_LETTERS[i];
+  });
+}
+
+function selectCorrectOption(row) {
+  if (currentQuizType === 'multiple') {
+    // Multi-choice: toggle correct on click
+    row.classList.toggle('correct');
+  } else {
+    // Single choice: only one correct at a time
+    const list = document.getElementById('quizOptionsList');
+    Array.from(list.children).forEach(r => r.classList.remove('correct'));
+    row.classList.add('correct');
+  }
+}
+
+function saveQuiz() {
+  const question = document.getElementById('quizQuestion').value.trim();
+  const list = document.getElementById('quizOptionsList');
+  const rows = list.children;
+
+  // Collect options (skip for short answer)
+  const options = [];
+  const correctIndices = [];
+  if (currentQuizType !== 'short') {
+    for (let i = 0; i < rows.length; i++) {
+      const input = rows[i].querySelector('.quiz-option-input');
+      const text = input.value.trim();
+      const isCorrect = rows[i].classList.contains('correct');
+      options.push({ text: text, correct: isCorrect, index: i });
+      if (isCorrect) correctIndices.push(i);
+    }
+  }
+
+  // Validation
+  let errorMsg = '';
+  let errorDetail = '';
+
+  if (!question) {
+    errorMsg = '题目不能为空';
+    errorDetail = '请输入题目内容后再保存。';
+  } else if (currentQuizType !== 'short' && correctIndices.length === 0) {
+    errorMsg = '未选择正确答案';
+    errorDetail = '请点击选项标记为正确答案（选项背景会变绿）。';
+  } else if (currentQuizType === 'single' && correctIndices.length > 1) {
+    errorMsg = '正确答案数量过多';
+    errorDetail = '单选题只能选择 1 个正确答案，当前已选择 ' + correctIndices.length + ' 个。';
+  } else if (currentQuizType === 'multiple' && correctIndices.length < 2) {
+    errorMsg = '正确答案数量不足';
+    errorDetail = '多选题至少应选择 2 个正确答案，当前仅选择了 ' + correctIndices.length + ' 个。';
+  } else if (currentQuizType !== 'short') {
+    // Check empty options
+    const emptyOption = options.find(o => !o.text);
+    if (emptyOption) {
+      const letter = QUIZ_OPTION_LETTERS[emptyOption.index];
+      errorMsg = '选项内容为空';
+      errorDetail = '选项 ' + letter + ' 的内容不能为空，请填写完整后再保存。';
+    }
+  }
+
+  if (errorMsg) {
+    showQuizError(errorMsg, errorDetail);
+    return;
+  }
+
+  // Create visual quiz card
+  const container = document.getElementById('savedQuizzesContainer');
+  const cardIndex = container.children.length;
+  createQuizCard(container, cardIndex, question, options, currentQuizType);
+
+  // Close quiz editor
+  closeQuizEditor();
+  document.getElementById('subsectionMdInput').focus();
+}
+
+function createQuizCard(container, index, question, options, quizType) {
+  const card = document.createElement('div');
+  card.className = 'saved-quiz-card';
+  card.setAttribute('data-quiz-index', index);
+  card.setAttribute('data-quiz-type', quizType);
+
+  const isMulti = quizType === 'multiple';
+  const isShort = quizType === 'short';
+  const icon = isMulti ? '🟡' : isShort ? '📝' : '🟢';
+  const typeLabel = isMulti ? '多选题' : isShort ? '简答题' : '单选题';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'saved-quiz-card-header';
+  const number = document.createElement('span');
+  number.className = 'saved-quiz-number';
+  number.textContent = '题号 ' + (index + 1);
+
+  const headerRight = document.createElement('div');
+  headerRight.className = 'saved-quiz-header-right';
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'saved-quiz-copy-btn';
+  copyBtn.innerHTML = '📋 复制';
+  copyBtn.title = '复制此题';
+  copyBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    copyQuizCard(card);
+  });
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'saved-quiz-delete-btn';
+  deleteBtn.innerHTML = '🗑 删除';
+  deleteBtn.title = '删除此题';
+  deleteBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    deleteQuizCard(card);
+  });
+
+  headerRight.appendChild(copyBtn);
+  headerRight.appendChild(deleteBtn);
+  header.appendChild(number);
+  header.appendChild(headerRight);
+
+  // Question
+  const qEl = document.createElement('div');
+  qEl.className = 'saved-quiz-question';
+  qEl.innerHTML = icon + ' ' + typeLabel + ' — ' + (index + 1) + '. ' + question;
+
+  card.appendChild(header);
+  card.appendChild(qEl);
+
+  // Options (only for single/multiple)
+  if (!isShort) {
+    const optsEl = document.createElement('div');
+    optsEl.className = 'saved-quiz-options';
+    for (let i = 0; i < options.length; i++) {
+      const opt = document.createElement('div');
+      opt.className = 'saved-quiz-option' + (options[i].correct ? ' is-correct' : '');
+      const letter = document.createElement('span');
+      letter.className = 'saved-quiz-option-letter';
+      letter.textContent = QUIZ_OPTION_LETTERS[i];
+      const text = document.createElement('span');
+      text.textContent = options[i].text;
+      opt.appendChild(letter);
+      opt.appendChild(text);
+      optsEl.appendChild(opt);
+    }
+    card.appendChild(optsEl);
+
+    // Answer hint
+    const correctLetters = options
+      .filter(o => o.correct)
+      .map(o => QUIZ_OPTION_LETTERS[o.index])
+      .join(', ');
+    const answerHint = document.createElement('div');
+    answerHint.style.cssText = 'margin-top:8px;font-size:11px;color:var(--text-muted);';
+    answerHint.textContent = '✅ 正确答案：' + correctLetters;
+    card.appendChild(answerHint);
+  }
+
+  container.appendChild(card);
+}
+
+function copyQuizCard(sourceCard) {
+  const container = document.getElementById('savedQuizzesContainer');
+  const newIndex = container.children.length;
+  // Clone the card
+  const clone = sourceCard.cloneNode(true);
+  clone.setAttribute('data-quiz-index', newIndex);
+
+  // Update title number
+  const numSpan = clone.querySelector('.saved-quiz-number');
+  numSpan.textContent = '题号 ' + (newIndex + 1);
+
+  // Update question text (replace leading number)
+  const qEl = clone.querySelector('.saved-quiz-question');
+  qEl.innerHTML = qEl.innerHTML.replace(/\d+\.\s*/, (newIndex + 1) + '. ');
+
+  // Re-bind copy button
+  const copyBtn = clone.querySelector('.saved-quiz-copy-btn');
+  copyBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    copyQuizCard(clone);
+  });
+
+  // Re-bind delete button
+  const deleteBtn = clone.querySelector('.saved-quiz-delete-btn');
+  deleteBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    deleteQuizCard(clone);
+  });
+
+  container.appendChild(clone);
+}
+
+function deleteQuizCard(card) {
+  card.remove();
+  renumberQuizCards();
+}
+
+function renumberQuizCards() {
+  const container = document.getElementById('savedQuizzesContainer');
+  Array.from(container.children).forEach((card, i) => {
+    card.setAttribute('data-quiz-index', i);
+    const numSpan = card.querySelector('.saved-quiz-number');
+    if (numSpan) numSpan.textContent = '题号 ' + (i + 1);
+    const qEl = card.querySelector('.saved-quiz-question');
+    if (qEl) qEl.innerHTML = qEl.innerHTML.replace(/\d+\.\s*/, (i + 1) + '. ');
+  });
+}
+
+function showQuizError(msg, detail) {
+  document.getElementById('quizErrorMsg').textContent = msg;
+  document.getElementById('quizErrorDetail').textContent = detail;
+  document.getElementById('quizErrorOverlay').classList.add('active');
+}
+
+function closeQuizError() {
+  document.getElementById('quizErrorOverlay').classList.remove('active');
+}
+
+function undoSubsectionMd() {
+  document.execCommand('undo');
+  document.getElementById('subsectionMdInput').focus();
+}
+
+function redoSubsectionMd() {
+  document.execCommand('redo');
+  document.getElementById('subsectionMdInput').focus();
+}
+
+function closeSubsectionModal() {
+  document.getElementById('subsectionModalOverlay').classList.remove('active');
+  editingSubsection = null;
+  closeQuizEditor();
+  document.body.style.overflow = '';
+}
+
+function insertSubsectionMd(before, after) {
+  const textarea = document.getElementById('subsectionMdInput');
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selected = textarea.value.substring(start, end);
+  textarea.setRangeText(before + selected + after, start, end, 'select');
+  textarea.focus();
+}
+
+let currentUploadType = 'image';
+
+function toggleUploadZone(type) {
+  currentUploadType = type;
+  const zone = document.getElementById('subsectionUploadZone');
+  const input = document.getElementById('subsectionFileInput');
+  const icon = document.getElementById('uploadZoneIcon');
+  const text = document.getElementById('uploadZoneText');
+  const hint = document.getElementById('uploadZoneHint');
+
+  if (zone.classList.contains('active') && currentUploadType === type) {
+    // Toggle off if same type clicked again
+    zone.classList.remove('active');
+    return;
+  }
+
+  zone.classList.add('active');
+
+  if (type === 'image') {
+    icon.textContent = '🖼️';
+    text.textContent = '点击或拖拽上传图片';
+    hint.textContent = '支持 JPG / PNG / GIF，最大 10MB';
+    input.accept = 'image/*';
+  } else {
+    icon.textContent = '🎬';
+    text.textContent = '点击或拖拽上传视频';
+    hint.textContent = '支持 MP4 / MOV / WebM，最大 200MB';
+    input.accept = 'video/*';
+  }
+
+  // Setup drag & drop
+  zone.ondragover = function(e) { e.preventDefault(); zone.classList.add('dragover'); };
+  zone.ondragleave = function() { zone.classList.remove('dragover'); };
+  zone.ondrop = function(e) {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      handleUploadFile(input);
+    }
+  };
+}
+
+function handleUploadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const textarea = document.getElementById('subsectionMdInput');
+  const fileName = file.name;
+  const placeholder = currentUploadType === 'image'
+    ? '![图片: ' + fileName + '](upload/' + fileName + ')'
+    : '[🎬 视频: ' + fileName + '](upload/' + fileName + ')';
+
+  const start = textarea.selectionStart;
+  textarea.setRangeText('\n' + placeholder + '\n', start, textarea.selectionEnd, 'end');
+  document.getElementById('subsectionUploadZone').classList.remove('active');
+  input.value = '';
+  textarea.focus();
+}
+
+// ===== Subsection data store =====
+// Keyed by chapter name; each value is an array of {name, info, order, mdContent}
+const subsectionsByChapter = {};
+let editingSubsection = null; // {chapterName, index} when editing, null when creating new
+
+function saveSubsection() {
+  const chapter = document.getElementById('subChapter').value;
+  const name = document.getElementById('subName').value;
+  const order = document.getElementById('subOrder').value;
+  const info = document.getElementById('subInfo').value;
+  const questionBank = document.getElementById('subQuestionBank').value;
+  const mdContent = document.getElementById('subsectionMdInput').value;
+
+  if (!chapter) { alert('请选择所属章节'); return; }
+  if (!name) { alert('请输入小节名称'); return; }
+
+  // Store subsection data
+  if (!subsectionsByChapter[chapter]) {
+    subsectionsByChapter[chapter] = [];
+  }
+
+  // Collect quiz card data from the visual editor
+  const quizCards = collectQuizCards();
+
+  const subsectionData = {
+    name: name,
+    info: info,
+    order: parseInt(order) || 1,
+    questionBank: questionBank,
+    mdContent: mdContent,
+    quizCards: quizCards,
+    createdAt: editingSubsection
+      ? (subsectionsByChapter[chapter][editingSubsection.index]?.createdAt || new Date().toISOString().split('T')[0])
+      : new Date().toISOString().split('T')[0]
+  };
+
+  if (editingSubsection && editingSubsection.chapterName === chapter) {
+    // Update existing subsection
+    subsectionsByChapter[chapter][editingSubsection.index] = subsectionData;
+  } else if (editingSubsection && editingSubsection.chapterName !== chapter) {
+    // Moved to a different chapter — remove from old, add to new
+    const oldChapter = editingSubsection.chapterName;
+    subsectionsByChapter[oldChapter].splice(editingSubsection.index, 1);
+    subsectionsByChapter[chapter].push(subsectionData);
+    renderChapterSubsections(oldChapter);
+  } else {
+    // New subsection
+    subsectionsByChapter[chapter].push(subsectionData);
+  }
+
+  // Sort by order
+  subsectionsByChapter[chapter].sort((a, b) => a.order - b.order);
+
+  // Refresh the chapter modal display
+  renderChapterSubsections(chapter);
+  // Ensure the chapter is expanded
+  expandChapter(chapter);
+
+  editingSubsection = null;
+  closeSubsectionModal();
+}
+
+function toggleChapterExpand(row) {
+  const chapterName = row.getAttribute('data-chapter-name');
+  const subsRow = document.querySelector('.chapter-subsections-row[data-for-chapter="' + CSS.escape(chapterName) + '"]');
+  if (!subsRow) return;
+
+  if (row.classList.contains('expanded')) {
+    row.classList.remove('expanded');
+    subsRow.classList.remove('expanded');
+  } else {
+    row.classList.add('expanded');
+    subsRow.classList.add('expanded');
+    // Render subsections if the cell is empty
+    const td = subsRow.querySelector('td');
+    if (td && !td.hasAttribute('data-rendered')) {
+      renderChapterSubsections(chapterName);
+    }
+  }
+}
+
+function expandChapter(chapterName) {
+  const row = document.querySelector('.chapter-row[data-chapter-name="' + CSS.escape(chapterName) + '"]');
+  const subsRow = document.querySelector('.chapter-subsections-row[data-for-chapter="' + CSS.escape(chapterName) + '"]');
+  if (row && subsRow) {
+    row.classList.add('expanded');
+    subsRow.classList.add('expanded');
+  }
+}
+
+function renderChapterSubsections(chapterName) {
+  const subsRow = document.querySelector('.chapter-subsections-row[data-for-chapter="' + CSS.escape(chapterName) + '"]');
+  if (!subsRow) return;
+  const td = subsRow.querySelector('td');
+  if (!td) return;
+
+  td.setAttribute('data-rendered', '1');
+  const subs = subsectionsByChapter[chapterName] || [];
+
+  if (subs.length === 0) {
+    td.innerHTML = '<div class="subsection-empty">暂无小节，点击「新增小节」添加</div>';
+    return;
+  }
+
+  let html = '<table class="subsection-nested-table"><thead><tr><th>序号</th><th>小节名称</th><th>信息</th><th>排序号</th><th>创建时间</th><th>操作</th></tr></thead><tbody>';
+  subs.forEach((sub, i) => {
+    html += '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td style="font-weight:600;">' + escHtml(sub.name) + '</td>' +
+      '<td>' + escHtml(sub.info || '—') + '</td>' +
+      '<td>' + sub.order + '</td>' +
+      '<td>' + (sub.createdAt || '—') + '</td>' +
+      '<td><div class="actions">' +
+        '<button class="btn-sm" onclick="editSubsection(\'' + escHtml(chapterName) + '\', ' + i + ')">编辑</button>' +
+        '<button class="btn-sm btn-sm--danger" onclick="deleteSubsection(\'' + escHtml(chapterName) + '\', ' + i + ')">删除</button>' +
+      '</div></td>' +
+      '</tr>';
+  });
+  html += '</tbody></table>';
+  td.innerHTML = html;
+}
+
+function escHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function collectQuizCards() {
+  const container = document.getElementById('savedQuizzesContainer');
+  const cards = [];
+  container.querySelectorAll('.saved-quiz-card').forEach(card => {
+    const quizType = card.getAttribute('data-quiz-type');
+    const qText = card.querySelector('.saved-quiz-question');
+    // Extract question text (remove icon, type label, and number prefix)
+    let question = '';
+    if (qText) {
+      question = qText.textContent.replace(/^[🔘🟡📝]\s*(单选题|多选题|简答题)\s*—\s*\d+\.\s*/, '').trim();
+    }
+    const options = [];
+    card.querySelectorAll('.saved-quiz-option').forEach(opt => {
+      const text = opt.querySelector('span:last-child').textContent.trim();
+      const correct = opt.classList.contains('is-correct');
+      options.push({ text: text, correct: correct });
+    });
+    cards.push({ quizType: quizType, question: question, options: options });
+  });
+  return cards;
+}
+
+function restoreQuizCards(cards) {
+  const container = document.getElementById('savedQuizzesContainer');
+  container.innerHTML = '';
+  if (!cards || !cards.length) return;
+  cards.forEach((card, i) => {
+    createQuizCard(container, i, card.question, card.options, card.quizType);
+  });
+}
+
+function deleteSubsection(chapterName, index) {
+  if (!subsectionsByChapter[chapterName]) return;
+  const sub = subsectionsByChapter[chapterName][index];
+  if (!sub) return;
+  if (!confirm('确定要删除小节「' + sub.name + '」吗？')) return;
+  subsectionsByChapter[chapterName].splice(index, 1);
+  renderChapterSubsections(chapterName);
+}
+
+function editSubsection(chapterName, index) {
+  if (!subsectionsByChapter[chapterName]) return;
+  const sub = subsectionsByChapter[chapterName][index];
+  if (!sub) return;
+
+  editingSubsection = { chapterName: chapterName, index: index };
+
+  document.getElementById('subsectionModalTitle').textContent = '编辑小节 — ' + chapterName;
+  const select = document.getElementById('subChapter');
+  for (let i = 0; i < select.options.length; i++) {
+    if (select.options[i].text === chapterName) { select.selectedIndex = i; break; }
+  }
+  document.getElementById('subInfo').value = sub.info || '';
+  document.getElementById('subName').value = sub.name;
+  document.getElementById('subOrder').value = sub.order;
+  document.getElementById('subQuestionBank').value = sub.questionBank || '';
+  document.getElementById('subsectionMdInput').value = sub.mdContent || '';
+  document.getElementById('savedQuizzesContainer').innerHTML = '';
+  closeQuizEditor();
+  // Restore quiz cards
+  if (sub.quizCards && sub.quizCards.length) {
+    restoreQuizCards(sub.quizCards);
+  }
+
+  document.getElementById('subsectionModalOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+// Subsection modal: close on overlay click + ESC
+document.addEventListener('DOMContentLoaded', function() {
+  const subOverlay = document.getElementById('subsectionModalOverlay');
+  if (subOverlay) {
+    subOverlay.addEventListener('click', function(e) {
+      if (e.target === subOverlay) closeSubsectionModal();
+    });
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const quizPanel = document.getElementById('quizEditorPanel');
+      if (quizPanel && quizPanel.classList.contains('active')) {
+        // If quiz error is showing, close it first
+        const errOverlay = document.getElementById('quizErrorOverlay');
+        if (errOverlay && errOverlay.classList.contains('active')) {
+          closeQuizError();
+        } else {
+          closeQuizEditor();
+        }
+        return;
+      }
+      if (subOverlay && subOverlay.classList.contains('active')) {
+        closeSubsectionModal();
+      }
+    }
+  });
+});
+
+// ===== Chapter Modal =====
+function showChapterModal(btn) {
+  // Find the course name from the row
+  const row = btn.closest('tr');
+  const nameCell = row.querySelector('td:nth-child(2)');
+  const courseName = nameCell ? nameCell.textContent.trim() : '';
+  document.getElementById('chapterModalTitle').textContent = courseName ? courseName + ' — 章节维护' : '章节维护';
+  document.getElementById('chapterModalOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeChapterModal() {
+  document.getElementById('chapterModalOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function addChapter() {
+  const tbody = document.getElementById('chapterTableBody');
+  const chapterRows = tbody.querySelectorAll('tr.chapter-row');
+  const newIndex = chapterRows.length + 1;
+  const today = new Date().toISOString().split('T')[0];
+  const chapterName = '新章节 ' + newIndex;
+
+  // Create chapter row
+  const tr = document.createElement('tr');
+  tr.className = 'chapter-row';
+  tr.setAttribute('data-chapter-name', chapterName);
+  tr.onclick = function() { toggleChapterExpand(this); };
+  tr.innerHTML = '<td>' + newIndex + '</td>' +
+    '<td style="font-weight:600;"><span class="chapter-expand-arrow">▶</span>' + chapterName + '</td>' +
+    '<td>请填写章节描述</td>' +
+    '<td>' + newIndex + '</td>' +
+    '<td>' + today + '</td>' +
+    '<td><div class="actions"><button class="btn-sm" onclick="event.stopPropagation()">编辑</button><button class="btn-sm" onclick="event.stopPropagation();showSubsectionModal(this)">新增小节</button><button class="btn-sm btn-sm--danger" onclick="event.stopPropagation()">删除章节</button></div></td>';
+  tr.style.background = '#fefce8';
+
+  // Create subsection container row
+  const subTr = document.createElement('tr');
+  subTr.className = 'chapter-subsections-row';
+  subTr.setAttribute('data-for-chapter', chapterName);
+  subTr.innerHTML = '<td colspan="6"></td>';
+
+  tbody.appendChild(tr);
+  tbody.appendChild(subTr);
+
+  // Also add chapter to the subsection form's select dropdown
+  const select = document.getElementById('subChapter');
+  const option = document.createElement('option');
+  option.value = chapterName;
+  option.textContent = chapterName;
+  select.appendChild(option);
+
+  setTimeout(() => { tr.style.background = ''; }, 2000);
+}
+
+// Chapter modal: close on overlay click + ESC
+document.addEventListener('DOMContentLoaded', function() {
+  const chapterOverlay = document.getElementById('chapterModalOverlay');
+  if (chapterOverlay) {
+    chapterOverlay.addEventListener('click', function(e) {
+      if (e.target === chapterOverlay) closeChapterModal();
+    });
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && chapterOverlay && chapterOverlay.classList.contains('active')) {
+      closeChapterModal();
+    }
+  });
+});
+
+// ===== Markdown Editor Modal =====
+function showMarkdownEditor(courseName) {
+  // Update modal title
+  document.getElementById('mdModalTitle').textContent = courseName + ' — 编辑课程';
+
+  // Pre-fill markdown with activity template
+  const textarea = document.getElementById('mdInput');
+  textarea.value = '# ' + courseName + '\n\n## 活动介绍\n\n简要介绍本次活动的内容和亮点。\n\n## 活动议程\n\n- 环节一\n- 环节二\n- 环节三\n\n## 适合人群\n\n描述本次活动适合什么样的参与者。\n\n## 注意事项\n\n列出参与活动需要注意的事项。\n';
+
+  // Clear activity info form
+  document.getElementById('activityTitle').value = courseName;
+  document.getElementById('activityCover').value = '';
+  document.getElementById('activityTime').value = '';
+  document.getElementById('activityLocation').value = '';
+  document.getElementById('activityCapacity').value = '';
+  updateCoverPreview();
+
+  // Show modal
+  document.getElementById('mdModalOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  // Focus textarea
+  setTimeout(() => textarea.focus(), 100);
+}
+
+function closeMarkdownEditor() {
+  document.getElementById('mdModalOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Close modal on overlay click
+document.addEventListener('DOMContentLoaded', function() {
+  const overlay = document.getElementById('mdModalOverlay');
+  if (overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closeMarkdownEditor();
+    });
+  }
+  // ESC key to close
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && overlay.classList.contains('active')) {
+      closeMarkdownEditor();
+    }
+  });
+});
+
+function insertMarkdown(before, after) {
+  const textarea = document.getElementById('mdInput');
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selected = textarea.value.substring(start, end);
+  const replacement = before + selected + after;
+  textarea.setRangeText(replacement, start, end, 'select');
+  textarea.focus();
+}
+
+function insertImage() {
+  const url = prompt('请输入图片 URL：');
+  if (url) {
+    insertMarkdown('![图片](' + url + ')', '');
+  }
+}
+
+function insertVideo() {
+  const url = prompt('请输入视频 URL：');
+  if (url) {
+    insertMarkdown('<video controls src="' + url + '"></video>', '');
+  }
+}
+
+function updateCoverPreview() {
+  const url = document.getElementById('activityCover').value.trim();
+  const preview = document.getElementById('coverPreview');
+  if (url) {
+    preview.innerHTML = '<img src="' + url.replace(/"/g, '&quot;') + '" alt="封面预览" onerror="this.parentElement.innerHTML=\'<span style=&quot;color:var(--rose)&quot;>图片加载失败</span>\'" />';
+  } else {
+    preview.innerHTML = '<span>图片预览区域</span>';
+  }
+}
+
+function saveMarkdown() {
+  const btn = document.getElementById('mdSaveBtn');
+  const activity = {
+    title: document.getElementById('activityTitle').value.trim(),
+    cover: document.getElementById('activityCover').value.trim(),
+    time: document.getElementById('activityTime').value,
+    location: document.getElementById('activityLocation').value.trim(),
+    capacity: document.getElementById('activityCapacity').value,
+    content: document.getElementById('mdInput').value
+  };
+
+  // Validate required fields
+  if (!activity.title) { alert('请输入活动标题'); return; }
+
+  console.log('活动详情保存:', activity);
+
+  const originalText = btn.textContent;
+  btn.textContent = '已保存 ✓';
+  btn.style.opacity = '0.7';
+  setTimeout(() => {
+    btn.textContent = originalText;
+    btn.style.opacity = '1';
+  }, 2000);
+}
+
+// ===== Course Editor Modal =====
+function openCourseEditor() {
+  document.getElementById('courseEditorTitle').textContent = '新增课程';
+  document.getElementById('courseMdInput').value = '# 课程介绍\n\n## 课程概述\n\n\n## 学习目标\n\n- \n- \n- \n\n## 适合人群\n\n';
+  document.getElementById('courseName').value = '';
+  document.getElementById('courseCover').value = '';
+  document.getElementById('courseDesc').value = '';
+  document.getElementById('courseLevel').value = '';
+  document.getElementById('courseCategory').value = '';
+  document.getElementById('courseTags').value = '';
+  document.getElementById('courseAssignment').value = '';
+  updateCourseCoverPreview();
+  document.getElementById('courseEditorOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('courseMdInput').focus(), 100);
+}
+
+function closeCourseEditor() {
+  document.getElementById('courseEditorOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function insertCourseImage() {
+  const url = prompt('请输入图片 URL：');
+  if (url) {
+    const ta = document.getElementById('courseMdInput');
+    const start = ta.selectionStart; const end = ta.selectionEnd;
+    const selected = ta.value.substring(start, end);
+    ta.setRangeText('![](' + url + ')', start, end, 'select');
+    ta.focus();
+  }
+}
+
+function insertCourseVideo() {
+  const url = prompt('请输入视频 URL：');
+  if (url) {
+    const ta = document.getElementById('courseMdInput');
+    const start = ta.selectionStart; const end = ta.selectionEnd;
+    const selected = ta.value.substring(start, end);
+    ta.setRangeText('<video controls src="' + url + '"></video>', start, end, 'select');
+    ta.focus();
+  }
+}
+
+function updateCourseCoverPreview() {
+  const url = document.getElementById('courseCover').value.trim();
+  const preview = document.getElementById('courseCoverPreview');
+  if (url) {
+    preview.innerHTML = '<img src="' + url.replace(/"/g, '&quot;') + '" alt="封面预览" onerror="this.parentElement.innerHTML=\'<span style=&quot;color:var(--rose)&quot;>图片加载失败</span>\'" />';
+  } else {
+    preview.innerHTML = '<span>图片预览区域</span>';
+  }
+}
+
+function saveCourse() {
+  const btn = document.getElementById('courseSaveBtn');
+  const course = {
+    name: document.getElementById('courseName').value.trim(),
+    cover: document.getElementById('courseCover').value.trim(),
+    desc: document.getElementById('courseDesc').value.trim(),
+    level: document.getElementById('courseLevel').value,
+    category: document.getElementById('courseCategory').value,
+    tags: document.getElementById('courseTags').value.trim(),
+    assignment: document.getElementById('courseAssignment').value,
+    content: document.getElementById('courseMdInput').value
+  };
+
+  if (!course.name) { alert('请输入课程名称'); return; }
+
+  console.log('课程保存:', course);
+
+  const originalText = btn.textContent;
+  btn.textContent = '已保存 ✓';
+  btn.style.opacity = '0.7';
+  setTimeout(() => {
+    btn.textContent = originalText;
+    btn.style.opacity = '1';
+  }, 2000);
+}
+
+// ESC key: close course editor
+document.addEventListener('DOMContentLoaded', function() {
+  const courseOverlay = document.getElementById('courseEditorOverlay');
+  if (courseOverlay) {
+    courseOverlay.addEventListener('click', function(e) {
+      if (e.target === courseOverlay) closeCourseEditor();
+    });
+  }
+});
+
+// ===== Question Bank CRUD =====
+let currentEditingBankRow = null;
+
+function createQuestionBank() {
+  const name = prompt('请输入题库名称：');
+  if (!name || !name.trim()) return;
+  const tbody = document.getElementById('questionBankTableBody');
+  const rowCount = tbody.children.length;
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td>' + (rowCount + 1) + '</td>' +
+    '<td style="font-weight:600;">' + escHtml(name.trim()) + '</td>' +
+    '<td>0</td>' +
+    '<td>—</td>' +
+    '<td>' + dateStr + '</td>' +
+    '<td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>';
+  // Store quiz cards data on the row
+  tr.setAttribute('data-quiz-cards', '[]');
+  tbody.appendChild(tr);
+}
+
+function editQuestionBank(btn) {
+  const row = btn.closest('tr');
+  currentEditingBankRow = row;
+  const name = row.querySelector('td:nth-child(2)').textContent.trim();
+  const category = row.querySelector('td:nth-child(4)').textContent.trim();
+  document.getElementById('qbEditorTitle').textContent = '编辑题库 — ' + name;
+  document.getElementById('qbName').value = name;
+  document.getElementById('qbCategory').value = (category === '—') ? '' : category;
+  document.getElementById('qbDesc').value = '';
+  // Restore quiz cards
+  qbCloseQuizEditor();
+  const container = document.getElementById('qbSavedQuizzesContainer');
+  container.innerHTML = '';
+  let cards = [];
+  try { cards = JSON.parse(row.getAttribute('data-quiz-cards') || '[]'); } catch(e) {}
+  qbRestoreQuizCards(cards);
+  document.getElementById('qbEditorOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function copyQuestionBank(btn) {
+  const row = btn.closest('tr');
+  const tbody = document.getElementById('questionBankTableBody');
+  const newRow = row.cloneNode(true);
+  const rowCount = tbody.children.length;
+  newRow.querySelector('td:nth-child(1)').textContent = rowCount + 1;
+  // Re-bind buttons
+  newRow.querySelectorAll('button').forEach(b => {
+    const txt = b.textContent.trim();
+    if (txt === '编辑') b.setAttribute('onclick', 'editQuestionBank(this)');
+    else if (txt === '复制') b.setAttribute('onclick', 'copyQuestionBank(this)');
+    else if (txt === '删除') b.setAttribute('onclick', 'deleteQuestionBank(this)');
+  });
+  tbody.appendChild(newRow);
+}
+
+function deleteQuestionBank(btn) {
+  if (!confirm('确定要删除该题库吗？此操作不可恢复。')) return;
+  const row = btn.closest('tr');
+  row.remove();
+  // Renumber
+  Array.from(document.getElementById('questionBankTableBody').children).forEach((r, i) => {
+    r.querySelector('td:nth-child(1)').textContent = i + 1;
+  });
+}
+
+function closeQuestionBankEditor() {
+  document.getElementById('qbEditorOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+  currentEditingBankRow = null;
+  qbCloseQuizEditor();
+}
+
+function saveQuestionBank() {
+  const name = document.getElementById('qbName').value.trim();
+  if (!name) { alert('请输入题库名称'); return; }
+  const category = document.getElementById('qbCategory').value;
+  const desc = document.getElementById('qbDesc').value.trim();
+  const cards = qbCollectQuizCards();
+
+  if (currentEditingBankRow) {
+    currentEditingBankRow.querySelector('td:nth-child(2)').textContent = name;
+    currentEditingBankRow.querySelector('td:nth-child(3)').textContent = cards.length;
+    currentEditingBankRow.querySelector('td:nth-child(4)').textContent = category || '—';
+    currentEditingBankRow.setAttribute('data-quiz-cards', JSON.stringify(cards));
+  }
+
+  console.log('题库保存:', { name, category, desc, cards });
+
+  const btn = document.querySelector('#qbEditorOverlay .activity-info-panel .btn-sm--primary');
+  const originalText = btn.textContent;
+  btn.textContent = '已保存 ✓';
+  btn.style.opacity = '0.7';
+  setTimeout(() => { btn.textContent = originalText; btn.style.opacity = '1'; }, 2000);
+}
+
+// ===== Question Bank Quiz Editor =====
+let currentQBType = 'single';
+
+function qbOpenQuizEditor(type) {
+  currentQBType = type || 'single';
+  const panel = document.getElementById('qbQuizEditorPanel');
+  const list = document.getElementById('qbQuizOptionsList');
+  const optionsField = document.getElementById('qbQuizOptionsField');
+  document.getElementById('qbQuizQuestion').value = '';
+  list.innerHTML = '';
+
+  // Update type selector active state
+  document.querySelectorAll('.qb-type-btn').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.querySelector('.qb-type-btn[data-qb-type="' + type + '"]');
+  if (activeBtn) activeBtn.classList.add('active');
+
+  // Update header
+  const header = panel.querySelector('.quiz-editor-header span');
+  if (currentQBType === 'multiple') header.textContent = '🟡 多选题编辑';
+  else if (currentQBType === 'short') header.textContent = '📝 简答题编辑';
+  else header.textContent = '🔘 单选题编辑';
+
+  // Show/hide options field
+  if (currentQBType === 'short') {
+    optionsField.style.display = 'none';
+  } else {
+    optionsField.style.display = '';
+    for (let i = 0; i < 2; i++) qbAddQuizOption();
+  }
+  panel.classList.add('active');
+}
+
+function qbCloseQuizEditor() {
+  document.getElementById('qbQuizEditorPanel').classList.remove('active');
+  document.getElementById('qbQuizErrorOverlay').classList.remove('active');
+}
+
+function qbAddQuizOption() {
+  const list = document.getElementById('qbQuizOptionsList');
+  const index = list.children.length;
+  const letter = QUIZ_OPTION_LETTERS[index] || String(index + 1);
+  const row = document.createElement('div');
+  row.className = 'quiz-option-row';
+  row.innerHTML =
+    '<span class="quiz-option-letter">' + letter + '</span>' +
+    '<input class="quiz-option-input" type="text" placeholder="选项 ' + letter + '" onfocus="event.stopPropagation()">' +
+    '<button class="quiz-option-delete" onclick="qbDeleteQuizOption(this, event)" title="删除选项">×</button>';
+  row.addEventListener('click', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+    qbSelectCorrectOption(row);
+  });
+  list.appendChild(row);
+  setTimeout(() => {
+    const input = row.querySelector('.quiz-option-input');
+    if (input) input.focus();
+  }, 50);
+}
+
+function qbDeleteQuizOption(btn, event) {
+  event.stopPropagation();
+  const row = btn.closest('.quiz-option-row');
+  row.remove();
+  const list = document.getElementById('qbQuizOptionsList');
+  Array.from(list.children).forEach((row, i) => {
+    row.querySelector('.quiz-option-letter').textContent = QUIZ_OPTION_LETTERS[i];
+  });
+}
+
+function qbSelectCorrectOption(row) {
+  if (currentQBType === 'multiple') {
+    row.classList.toggle('correct');
+  } else {
+    const list = document.getElementById('qbQuizOptionsList');
+    Array.from(list.children).forEach(r => r.classList.remove('correct'));
+    row.classList.add('correct');
+  }
+}
+
+function qbSaveQuiz() {
+  const question = document.getElementById('qbQuizQuestion').value.trim();
+  const list = document.getElementById('qbQuizOptionsList');
+  const rows = list.children;
+
+  const options = [];
+  const correctIndices = [];
+  if (currentQBType !== 'short') {
+    for (let i = 0; i < rows.length; i++) {
+      const input = rows[i].querySelector('.quiz-option-input');
+      const text = input.value.trim();
+      const isCorrect = rows[i].classList.contains('correct');
+      options.push({ text: text, correct: isCorrect, index: i });
+      if (isCorrect) correctIndices.push(i);
+    }
+  }
+
+  let errorMsg = '', errorDetail = '';
+  if (!question) {
+    errorMsg = '题目不能为空'; errorDetail = '请输入题目内容后再保存。';
+  } else if (currentQBType !== 'short' && correctIndices.length === 0) {
+    errorMsg = '未选择正确答案'; errorDetail = '请点击选项标记为正确答案（选项背景会变绿）。';
+  } else if (currentQBType === 'single' && correctIndices.length > 1) {
+    errorMsg = '正确答案数量过多'; errorDetail = '单选题只能选择 1 个正确答案，当前已选择 ' + correctIndices.length + ' 个。';
+  } else if (currentQBType === 'multiple' && correctIndices.length < 2) {
+    errorMsg = '正确答案数量不足'; errorDetail = '多选题至少应选择 2 个正确答案，当前仅选择了 ' + correctIndices.length + ' 个。';
+  } else if (currentQBType !== 'short') {
+    const emptyOption = options.find(o => !o.text);
+    if (emptyOption) {
+      const letter = QUIZ_OPTION_LETTERS[emptyOption.index];
+      errorMsg = '选项内容为空'; errorDetail = '选项 ' + letter + ' 的内容不能为空，请填写完整后再保存。';
+    }
+  }
+
+  if (errorMsg) { qbShowQuizError(errorMsg, errorDetail); return; }
+
+  const container = document.getElementById('qbSavedQuizzesContainer');
+  const cardIndex = container.children.length;
+  qbCreateQuizCard(container, cardIndex, question, options, currentQBType);
+  qbCloseQuizEditor();
+}
+
+function qbCreateQuizCard(container, index, question, options, quizType) {
+  const card = document.createElement('div');
+  card.className = 'saved-quiz-card';
+  card.setAttribute('data-quiz-index', index);
+  card.setAttribute('data-quiz-type', quizType);
+
+  const isMulti = quizType === 'multiple';
+  const isShort = quizType === 'short';
+  const icon = isMulti ? '🟡' : isShort ? '📝' : '🟢';
+  const typeLabel = isMulti ? '多选题' : isShort ? '简答题' : '单选题';
+
+  const header = document.createElement('div');
+  header.className = 'saved-quiz-card-header';
+  const number = document.createElement('span');
+  number.className = 'saved-quiz-number';
+  number.textContent = '题号 ' + (index + 1);
+
+  const headerRight = document.createElement('div');
+  headerRight.className = 'saved-quiz-header-right';
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'saved-quiz-copy-btn';
+  copyBtn.innerHTML = '📋 复制';
+  copyBtn.title = '复制此题';
+  copyBtn.addEventListener('click', function(e) { e.stopPropagation(); qbCopyQuizCard(card); });
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'saved-quiz-delete-btn';
+  deleteBtn.innerHTML = '🗑 删除';
+  deleteBtn.title = '删除此题';
+  deleteBtn.addEventListener('click', function(e) { e.stopPropagation(); qbDeleteQuizCard(card); });
+
+  headerRight.appendChild(copyBtn);
+  headerRight.appendChild(deleteBtn);
+  header.appendChild(number);
+  header.appendChild(headerRight);
+
+  const qEl = document.createElement('div');
+  qEl.className = 'saved-quiz-question';
+  qEl.innerHTML = icon + ' ' + typeLabel + ' — ' + (index + 1) + '. ' + question;
+  card.appendChild(header);
+  card.appendChild(qEl);
+
+  if (!isShort) {
+    const optsEl = document.createElement('div');
+    optsEl.className = 'saved-quiz-options';
+    for (let i = 0; i < options.length; i++) {
+      const opt = document.createElement('div');
+      opt.className = 'saved-quiz-option' + (options[i].correct ? ' is-correct' : '');
+      const letter = document.createElement('span');
+      letter.className = 'saved-quiz-option-letter';
+      letter.textContent = QUIZ_OPTION_LETTERS[i];
+      const text = document.createElement('span');
+      text.textContent = options[i].text;
+      opt.appendChild(letter);
+      opt.appendChild(text);
+      optsEl.appendChild(opt);
+    }
+    card.appendChild(optsEl);
+
+    const correctLetters = options.filter(o => o.correct).map(o => QUIZ_OPTION_LETTERS[o.index]).join(', ');
+    const answerHint = document.createElement('div');
+    answerHint.style.cssText = 'margin-top:8px;font-size:11px;color:var(--text-muted);';
+    answerHint.textContent = '✅ 正确答案：' + correctLetters;
+    card.appendChild(answerHint);
+  }
+
+  container.appendChild(card);
+}
+
+function qbCopyQuizCard(sourceCard) {
+  const container = document.getElementById('qbSavedQuizzesContainer');
+  const newIndex = container.children.length;
+  const clone = sourceCard.cloneNode(true);
+  clone.setAttribute('data-quiz-index', newIndex);
+  const numSpan = clone.querySelector('.saved-quiz-number');
+  numSpan.textContent = '题号 ' + (newIndex + 1);
+  const qEl = clone.querySelector('.saved-quiz-question');
+  qEl.innerHTML = qEl.innerHTML.replace(/\d+\.\s*/, (newIndex + 1) + '. ');
+  const copyBtn = clone.querySelector('.saved-quiz-copy-btn');
+  copyBtn.addEventListener('click', function(e) { e.stopPropagation(); qbCopyQuizCard(clone); });
+  const deleteBtn = clone.querySelector('.saved-quiz-delete-btn');
+  deleteBtn.addEventListener('click', function(e) { e.stopPropagation(); qbDeleteQuizCard(clone); });
+  container.appendChild(clone);
+}
+
+function qbDeleteQuizCard(card) {
+  card.remove();
+  qbRenumberQuizCards();
+}
+
+function qbRenumberQuizCards() {
+  const container = document.getElementById('qbSavedQuizzesContainer');
+  Array.from(container.children).forEach((card, i) => {
+    card.setAttribute('data-quiz-index', i);
+    const numSpan = card.querySelector('.saved-quiz-number');
+    if (numSpan) numSpan.textContent = '题号 ' + (i + 1);
+    const qEl = card.querySelector('.saved-quiz-question');
+    if (qEl) qEl.innerHTML = qEl.innerHTML.replace(/\d+\.\s*/, (i + 1) + '. ');
+  });
+}
+
+function qbCollectQuizCards() {
+  const cards = [];
+  const container = document.getElementById('qbSavedQuizzesContainer');
+  Array.from(container.children).forEach(card => {
+    const quizType = card.getAttribute('data-quiz-type');
+    const qEl = card.querySelector('.saved-quiz-question');
+    let question = '';
+    if (qEl) {
+      // Remove icon, type label, and number prefix
+      question = qEl.textContent.replace(/^[🟢🟡📝]\s*(单选题|多选题|简答题)\s*—\s*\d+\.\s*/, '').trim();
+    }
+    const options = [];
+    const optionEls = card.querySelectorAll('.saved-quiz-option');
+    optionEls.forEach(opt => {
+      const isCorrect = opt.classList.contains('is-correct');
+      const textSpan = opt.querySelector('span:last-child');
+      const text = textSpan ? textSpan.textContent.trim() : '';
+      options.push({ text, correct: isCorrect, index: options.length });
+    });
+    cards.push({ quizType, question, options });
+  });
+  return cards;
+}
+
+function qbRestoreQuizCards(cards) {
+  const container = document.getElementById('qbSavedQuizzesContainer');
+  container.innerHTML = '';
+  cards.forEach((c, i) => {
+    // Rebuild options with index field
+    const opts = (c.options || []).map((o, j) => ({ text: o.text, correct: o.correct, index: j }));
+    qbCreateQuizCard(container, i, c.question, opts, c.quizType);
+  });
+}
+
+function qbShowQuizError(msg, detail) {
+  document.getElementById('qbQuizErrorMsg').textContent = msg;
+  document.getElementById('qbQuizErrorDetail').textContent = detail;
+  document.getElementById('qbQuizErrorOverlay').classList.add('active');
+}
+
+function qbCloseQuizError() {
+  document.getElementById('qbQuizErrorOverlay').classList.remove('active');
+}
+
+// ESC / overlay click to close QB editor
+document.addEventListener('DOMContentLoaded', function() {
+  const qbOverlay = document.getElementById('qbEditorOverlay');
+  if (qbOverlay) {
+    qbOverlay.addEventListener('click', function(e) {
+      if (e.target === qbOverlay) closeQuestionBankEditor();
+    });
+  }
+  // Extend global ESC handler for QB overlay
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && qbOverlay && qbOverlay.classList.contains('active')) {
+      // Only close if the inner quiz error is not active
+      const qbErr = document.getElementById('qbQuizErrorOverlay');
+      if (qbErr && qbErr.classList.contains('active')) {
+        qbCloseQuizError();
+      } else if (document.getElementById('qbQuizEditorPanel').classList.contains('active')) {
+        qbCloseQuizEditor();
+      } else {
+        closeQuestionBankEditor();
+      }
+    }
+  });
+});
+
+// ===== Assignment Editor =====
+let assignmentFiles = [];
+
+function openAssignmentEditor() {
+  document.getElementById('assignmentEditorTitle').textContent = '创建实训作业';
+  document.getElementById('assignmentTitle').value = '';
+  document.getElementById('assignmentCover').value = '';
+  document.getElementById('assignmentCategory').value = '';
+  document.getElementById('assignmentTags').value = '';
+  document.getElementById('assignmentQuestionsList').innerHTML = '';
+  assignmentFiles = [];
+  document.getElementById('assignmentFileList').innerHTML = '';
+  updateAssignmentCoverPreview();
+  // Add one empty question by default
+  addAssignmentQuestion();
+  document.getElementById('assignmentEditorOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAssignmentEditor() {
+  document.getElementById('assignmentEditorOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function addAssignmentQuestion() {
+  const list = document.getElementById('assignmentQuestionsList');
+  const index = list.children.length;
+  const card = document.createElement('div');
+  card.className = 'assignment-question-card';
+  card.innerHTML =
+    '<div class="assignment-question-card-header">' +
+      '<span class="assignment-question-number">题目 ' + (index + 1) + '</span>' +
+      '<button class="assignment-question-delete" onclick="deleteAssignmentQuestion(this)" title="删除题目">×</button>' +
+    '</div>' +
+    '<input class="assignment-question-input" type="text" placeholder="请输入题目">' +
+    '<textarea class="assignment-question-md" placeholder="在此编写题目说明 / 参考答案（支持 Markdown）..."></textarea>';
+  list.appendChild(card);
+  // Focus the new question input
+  setTimeout(() => {
+    const input = card.querySelector('.assignment-question-input');
+    if (input) input.focus();
+  }, 50);
+}
+
+function deleteAssignmentQuestion(btn) {
+  const card = btn.closest('.assignment-question-card');
+  card.remove();
+  renumberAssignmentQuestions();
+}
+
+function renumberAssignmentQuestions() {
+  const list = document.getElementById('assignmentQuestionsList');
+  Array.from(list.children).forEach((card, i) => {
+    const numSpan = card.querySelector('.assignment-question-number');
+    if (numSpan) numSpan.textContent = '题目 ' + (i + 1);
+  });
+}
+
+function updateAssignmentCoverPreview() {
+  const url = document.getElementById('assignmentCover').value.trim();
+  const preview = document.getElementById('assignmentCoverPreview');
+  if (url) {
+    preview.innerHTML = '<img src="' + url.replace(/"/g, '&quot;') + '" alt="封面预览" onerror="this.parentElement.innerHTML=\'<span style=&quot;color:var(--rose)&quot;>图片加载失败</span>\'" />';
+  } else {
+    preview.innerHTML = '<span>图片预览区域</span>';
+  }
+}
+
+function handleAssignmentFile(input) {
+  const listEl = document.getElementById('assignmentFileList');
+  Array.from(input.files).forEach(file => {
+    if (!assignmentFiles.find(f => f.name === file.name && f.size === file.size)) {
+      assignmentFiles.push(file);
+      const tag = document.createElement('span');
+      tag.className = 'assignment-file-tag';
+      tag.innerHTML = file.name + ' <button onclick="removeAssignmentFile(this, \'' + file.name.replace(/'/g, "\\'") + '\', ' + file.size + ')">×</button>';
+      listEl.appendChild(tag);
+    }
+  });
+  input.value = '';
+}
+
+function removeAssignmentFile(btn, filename, size) {
+  assignmentFiles = assignmentFiles.filter(f => !(f.name === filename && f.size === size));
+  btn.closest('.assignment-file-tag').remove();
+}
+
+function saveAssignment() {
+  const title = document.getElementById('assignmentTitle').value.trim();
+  if (!title) { alert('请输入作品标题'); return; }
+
+  const questions = [];
+  const list = document.getElementById('assignmentQuestionsList');
+  Array.from(list.children).forEach((card, i) => {
+    const qInput = card.querySelector('.assignment-question-input');
+    const mdInput = card.querySelector('.assignment-question-md');
+    questions.push({
+      number: i + 1,
+      title: qInput ? qInput.value.trim() : '',
+      content: mdInput ? mdInput.value : ''
+    });
+  });
+
+  const assignment = {
+    title: title,
+    cover: document.getElementById('assignmentCover').value.trim(),
+    category: document.getElementById('assignmentCategory').value,
+    tags: document.getElementById('assignmentTags').value.trim(),
+    files: assignmentFiles.map(f => f.name),
+    questions: questions
+  };
+
+  console.log('实训作业保存:', assignment);
+
+  const btn = document.querySelector('#assignmentEditorOverlay .activity-info-panel .btn-sm--primary');
+  const originalText = btn.textContent;
+  btn.textContent = '已保存 ✓';
+  btn.style.opacity = '0.7';
+  setTimeout(() => { btn.textContent = originalText; btn.style.opacity = '1'; }, 2000);
+}
+
+// ESC / overlay click for assignment editor
+document.addEventListener('DOMContentLoaded', function() {
+  const asOverlay = document.getElementById('assignmentEditorOverlay');
+  if (asOverlay) {
+    asOverlay.addEventListener('click', function(e) {
+      if (e.target === asOverlay) closeAssignmentEditor();
+    });
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && asOverlay && asOverlay.classList.contains('active')) {
+      closeAssignmentEditor();
+    }
+  });
+});
+
+// ===== Initialize: expand 课程维护 by default =====
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('navParentCourse').classList.add('expanded');
+});
+</script>
+
+</body>
+</html>
