@@ -872,6 +872,64 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 }
 .assignment-file-tag button:hover { background: var(--rose-bg); color: var(--rose); }
 
+/* Assignment add dropdown */
+.assignment-dropdown-wrap { position: relative; display: inline-flex; }
+.assignment-dropdown-menu {
+  display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50; min-width: 140px;
+  overflow: hidden; flex-direction: column;
+}
+.assignment-dropdown-menu.active { display: flex; }
+.assignment-dropdown-item {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer;
+  border: none; background: none; font-family: inherit; text-align: left;
+  white-space: nowrap; transition: all 0.1s ease;
+}
+.assignment-dropdown-item:hover { background: var(--bg-sidebar-hover); color: var(--accent-light); }
+.assignment-dropdown-item + .assignment-dropdown-item { border-top: 1px solid var(--border); }
+
+/* Assignment content type cards */
+.assignment-question-card[data-type="video"] .assignment-question-number { background: rgba(245,158,11,0.12); color: #d97706; }
+.assignment-question-card[data-type="file"] .assignment-question-number { background: rgba(6,182,212,0.12); color: #0891b2; }
+.assignment-video-url {
+  width: 100%; height: 36px; padding: 0 12px; border-radius: 8px; margin-top: 8px;
+  border: 1px solid var(--border-light); font-size: 13px; font-family: inherit;
+  color: var(--text-primary); background: var(--bg-card); outline: none;
+  transition: border-color 0.15s ease;
+}
+.assignment-video-url:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.assignment-video-preview {
+  margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-light);
+  background: #000; display: none;
+}
+.assignment-video-preview.has-video { display: block; }
+.assignment-video-preview video { width: 100%; max-height: 240px; display: block; }
+.assignment-file-dropzone {
+  margin-top: 8px; border: 2px dashed var(--border-light); border-radius: 10px;
+  padding: 24px 16px; text-align: center; cursor: pointer;
+  transition: all 0.2s ease; background: var(--bg-card);
+}
+.assignment-file-dropzone:hover { border-color: var(--accent); background: rgba(99,102,241,0.03); }
+.assignment-file-dropzone .file-icon { font-size: 28px; margin-bottom: 6px; }
+.assignment-file-dropzone .file-text { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+.assignment-file-dropzone .file-hint { font-size: 11px; color: var(--text-muted); }
+.assignment-file-dropzone input[type="file"] { display: none; }
+.assignment-file-tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.assignment-file-tags:empty { display: none; }
+.assignment-file-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border-radius: 6px; background: rgba(6,182,212,0.08);
+  font-size: 12px; color: #0891b2; font-weight: 500;
+}
+.assignment-file-item button {
+  width: 16px; height: 16px; border-radius: 50%; border: none; background: transparent;
+  cursor: pointer; color: var(--text-muted); font-size: 12px; line-height: 1;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.assignment-file-item button:hover { background: var(--rose-bg); color: var(--rose); }
+
 /* Right: form */
 .subsection-form { width: 45%; padding: 20px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
 .subsection-form-group { display: flex; flex-direction: column; gap: 6px; }
@@ -1948,7 +2006,14 @@ tr:hover td { background: rgba(99,102,241,0.02); }
             <div class="assignment-left-panel">
               <div class="assignment-questions-header">
                 <span>📝 题目列表</span>
-                <button class="assignment-add-btn" onclick="addAssignmentQuestion()" title="新增题目">+</button>
+                <div class="assignment-dropdown-wrap" id="assignmentDropdownWrap">
+                  <button class="assignment-add-btn" onclick="toggleAssignmentDropdown()" title="新增内容">+</button>
+                  <div class="assignment-dropdown-menu" id="assignmentDropdownMenu">
+                    <button class="assignment-dropdown-item" onclick="addAssignmentContent('markdown')">📝 Markdown</button>
+                    <button class="assignment-dropdown-item" onclick="addAssignmentContent('video')">🎬 视频</button>
+                    <button class="assignment-dropdown-item" onclick="addAssignmentContent('file')">📁 文件</button>
+                  </div>
+                </div>
               </div>
               <div class="assignment-questions-list" id="assignmentQuestionsList">
                 <!-- dynamically filled -->
@@ -3352,8 +3417,8 @@ document.addEventListener('DOMContentLoaded', function() {
 function openAssignmentEditor() {
   document.getElementById('assignmentEditorTitle').textContent = '创建实训作业';
   document.getElementById('assignmentQuestionsList').innerHTML = '';
-  // Add one empty question by default
-  addAssignmentQuestion();
+  // Add one markdown block by default
+  addAssignmentContent('markdown');
   document.getElementById('assignmentEditorOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -3363,74 +3428,209 @@ function closeAssignmentEditor() {
   document.body.style.overflow = '';
 }
 
-function addAssignmentQuestion() {
+function toggleAssignmentDropdown() {
+  const menu = document.getElementById('assignmentDropdownMenu');
+  menu.classList.toggle('active');
+}
+
+// Close assignment dropdown on outside click
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('assignmentDropdownWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('assignmentDropdownMenu').classList.remove('active');
+  }
+});
+
+function addAssignmentContent(type) {
+  // Close dropdown
+  document.getElementById('assignmentDropdownMenu').classList.remove('active');
+
   const list = document.getElementById('assignmentQuestionsList');
   const index = list.children.length;
   const card = document.createElement('div');
   card.className = 'assignment-question-card';
-  card.innerHTML =
-    '<div class="assignment-question-card-header">' +
-      '<span class="assignment-question-number">题目 ' + (index + 1) + '</span>' +
-      '<button class="assignment-question-delete" onclick="deleteAssignmentQuestion(this)" title="删除题目">×</button>' +
-    '</div>' +
-    '<input class="assignment-question-input" type="text" placeholder="请输入题目">' +
-    '<textarea class="assignment-question-md" placeholder="在此编写题目说明 / 参考答案（支持 Markdown）..."></textarea>';
+  card.setAttribute('data-type', type);
+
+  if (type === 'markdown') {
+    card.innerHTML =
+      '<div class="assignment-question-card-header">' +
+        '<span class="assignment-question-number">Markdown ' + (index + 1) + '</span>' +
+        '<button class="assignment-question-delete" onclick="deleteAssignmentQuestion(this)" title="删除">×</button>' +
+      '</div>' +
+      '<input class="assignment-question-input" type="text" placeholder="请输入标题">' +
+      '<textarea class="assignment-question-md" placeholder="在此编写内容（支持 Markdown）..."></textarea>';
+  } else if (type === 'video') {
+    card.innerHTML =
+      '<div class="assignment-question-card-header">' +
+        '<span class="assignment-question-number">🎬 视频 ' + (index + 1) + '</span>' +
+        '<button class="assignment-question-delete" onclick="deleteAssignmentQuestion(this)" title="删除">×</button>' +
+      '</div>' +
+      '<input class="assignment-question-input" type="text" placeholder="请输入视频标题">' +
+      '<input class="assignment-video-url" type="text" placeholder="请输入视频 URL（支持 mp4 / m3u8）" oninput="updateAssignmentVideoPreview(this)">' +
+      '<div class="assignment-video-preview"></div>';
+  } else if (type === 'file') {
+    card.innerHTML =
+      '<div class="assignment-question-card-header">' +
+        '<span class="assignment-question-number">📁 文件 ' + (index + 1) + '</span>' +
+        '<button class="assignment-question-delete" onclick="deleteAssignmentQuestion(this)" title="删除">×</button>' +
+      '</div>' +
+      '<input class="assignment-question-input" type="text" placeholder="请输入文件说明">' +
+      '<div class="assignment-file-dropzone" onclick="this.querySelector(\'input[type=file]\').click()">' +
+        '<div class="file-icon">📤</div>' +
+        '<div class="file-text">点击上传文件</div>' +
+        '<div class="file-hint">支持 .py &middot; .ipynb &middot; .txt &middot; .pdf &middot; .json &middot; .csv &middot; .xlsx</div>' +
+        '<input type="file" accept=".py,.ipynb,.txt,.pdf,.json,.csv,.xlsx" onchange="handleAssignmentFileInput(this)" multiple>' +
+      '</div>' +
+      '<div class="assignment-file-tags"></div>';
+  }
+
   list.appendChild(card);
-  // Focus the new question input
-  setTimeout(() => {
-    const input = card.querySelector('.assignment-question-input');
+
+  // Focus the first input
+  setTimeout(function() {
+    var input = card.querySelector('input[type="text"], .assignment-question-input');
     if (input) input.focus();
   }, 50);
 }
 
+function updateAssignmentVideoPreview(input) {
+  var card = input.closest('.assignment-question-card');
+  var preview = card.querySelector('.assignment-video-preview');
+  var url = input.value.trim();
+  if (url) {
+    preview.classList.add('has-video');
+    preview.innerHTML = '<video controls src="' + url.replace(/"/g, '&quot;') + '"></video>';
+  } else {
+    preview.classList.remove('has-video');
+    preview.innerHTML = '';
+  }
+}
+
+// Per-card file storage: keyed by card index via a WeakMap-like approach using card._files
+function handleAssignmentFileInput(input) {
+  var card = input.closest('.assignment-question-card');
+  var tags = card.querySelector('.assignment-file-tags');
+  if (!card._files) card._files = [];
+
+  Array.from(input.files).forEach(function(file) {
+    // Check extension
+    var ext = '.' + file.name.split('.').pop().toLowerCase();
+    var allowed = ['.py','.ipynb','.txt','.pdf','.json','.csv','.xlsx'];
+    if (allowed.indexOf(ext) === -1) {
+      alert('不支持的文件类型：' + file.name + '\n仅支持 .py .ipynb .txt .pdf .json .csv .xlsx');
+      return;
+    }
+    // Avoid duplicates
+    if (card._files.some(function(f) { return f.name === file.name && f.size === file.size; })) return;
+
+    card._files.push(file);
+
+    var tag = document.createElement('span');
+    tag.className = 'assignment-file-item';
+    tag.innerHTML = '📄 ' + file.name + ' <button onclick="removeAssignmentFile(this, \'' + file.name.replace(/'/g, "\\'") + '\')" title="移除">×</button>';
+    tag.setAttribute('data-filename', file.name);
+    tags.appendChild(tag);
+  });
+
+  // Reset input so same file can be re-selected
+  input.value = '';
+}
+
+function removeAssignmentFile(btn, filename) {
+  var card = btn.closest('.assignment-question-card');
+  var tags = card.querySelector('.assignment-file-tags');
+  // Remove tag
+  var tag = tags.querySelector('.assignment-file-item[data-filename="' + CSS.escape(filename) + '"]');
+  if (tag) tag.remove();
+  // Remove from data
+  if (card._files) {
+    card._files = card._files.filter(function(f) { return f.name !== filename; });
+  }
+}
+
 function deleteAssignmentQuestion(btn) {
-  const card = btn.closest('.assignment-question-card');
+  var card = btn.closest('.assignment-question-card');
   card.remove();
   renumberAssignmentQuestions();
 }
 
 function renumberAssignmentQuestions() {
-  const list = document.getElementById('assignmentQuestionsList');
-  Array.from(list.children).forEach((card, i) => {
-    const numSpan = card.querySelector('.assignment-question-number');
-    if (numSpan) numSpan.textContent = '题目 ' + (i + 1);
+  var list = document.getElementById('assignmentQuestionsList');
+  Array.from(list.children).forEach(function(card, i) {
+    var numSpan = card.querySelector('.assignment-question-number');
+    var type = card.getAttribute('data-type');
+    if (numSpan) {
+      if (type === 'video') numSpan.textContent = '🎬 视频 ' + (i + 1);
+      else if (type === 'file') numSpan.textContent = '📁 文件 ' + (i + 1);
+      else numSpan.textContent = 'Markdown ' + (i + 1);
+    }
   });
 }
 
-
 function saveAssignment() {
-  const questions = [];
-  const list = document.getElementById('assignmentQuestionsList');
-  Array.from(list.children).forEach((card, i) => {
-    const qInput = card.querySelector('.assignment-question-input');
-    const mdInput = card.querySelector('.assignment-question-md');
-    questions.push({
-      number: i + 1,
-      title: qInput ? qInput.value.trim() : '',
-      content: mdInput ? mdInput.value : ''
-    });
+  var items = [];
+  var list = document.getElementById('assignmentQuestionsList');
+  Array.from(list.children).forEach(function(card, i) {
+    var type = card.getAttribute('data-type') || 'markdown';
+    var titleInput = card.querySelector('.assignment-question-input');
+    var title = titleInput ? titleInput.value.trim() : '';
+
+    if (type === 'markdown') {
+      var mdInput = card.querySelector('.assignment-question-md');
+      items.push({
+        number: i + 1,
+        type: 'markdown',
+        title: title,
+        content: mdInput ? mdInput.value : ''
+      });
+    } else if (type === 'video') {
+      var videoInput = card.querySelector('.assignment-video-url');
+      items.push({
+        number: i + 1,
+        type: 'video',
+        title: title,
+        videoUrl: videoInput ? videoInput.value.trim() : ''
+      });
+    } else if (type === 'file') {
+      var fileNames = [];
+      if (card._files && card._files.length) {
+        fileNames = card._files.map(function(f) { return f.name; });
+      }
+      items.push({
+        number: i + 1,
+        type: 'file',
+        title: title,
+        files: fileNames
+      });
+    }
   });
 
-  // Validate at least one question has content
-  const hasContent = questions.some(q => q.title || q.content);
-  if (!hasContent) { alert('请至少填写一道题目'); return; }
+  // Validate at least one item has content
+  var hasContent = items.some(function(item) {
+    if (item.title) return true;
+    if (item.type === 'markdown' && item.content) return true;
+    if (item.type === 'video' && item.videoUrl) return true;
+    if (item.type === 'file' && item.files && item.files.length) return true;
+    return false;
+  });
+  if (!hasContent) { alert('请至少填写一项内容'); return; }
 
-  const assignment = {
-    questions: questions
+  var assignment = {
+    items: items
   };
 
   console.log('实训作业保存:', assignment);
 
-  const btn = document.querySelector('#assignmentEditorOverlay .assignment-save-bar .btn-sm--primary');
-  const originalText = btn.textContent;
+  var btn = document.querySelector('#assignmentEditorOverlay .assignment-save-bar .btn-sm--primary');
+  var originalText = btn.textContent;
   btn.textContent = '已保存 ✓';
   btn.style.opacity = '0.7';
-  setTimeout(() => { btn.textContent = originalText; btn.style.opacity = '1'; }, 2000);
+  setTimeout(function() { btn.textContent = originalText; btn.style.opacity = '1'; }, 2000);
 }
 
 // ESC / overlay click for assignment editor
 document.addEventListener('DOMContentLoaded', function() {
-  const asOverlay = document.getElementById('assignmentEditorOverlay');
+  var asOverlay = document.getElementById('assignmentEditorOverlay');
   if (asOverlay) {
     asOverlay.addEventListener('click', function(e) {
       if (e.target === asOverlay) closeAssignmentEditor();
