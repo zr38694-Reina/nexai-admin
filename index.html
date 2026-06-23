@@ -928,6 +928,14 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 }
 .qb-card-type-btn:hover { opacity: 0.8; transform: scale(1.05); }
 
+.qb-editor-type-dropdown { position: relative; }
+.qb-editor-type-btn {
+  font-size: 14px; font-weight: 700; cursor: pointer; border: none;
+  background: transparent; color: var(--text-primary); font-family: inherit;
+  padding: 2px 6px; border-radius: 6px; transition: all 0.15s ease;
+}
+.qb-editor-type-btn:hover { background: var(--bg-sidebar-hover); }
+
 .qb-card-type-dropdown { position: relative; flex-shrink: 0; }
 .qb-card-type-menu {
   display: none; position: absolute; top: 100%; left: 0; margin-top: 4px;
@@ -2026,7 +2034,17 @@ tr:hover td { background: rgba(99,102,241,0.02); }
                 </div>
                 <div class="quiz-editor-panel" id="qbQuizEditorPanel">
                   <div class="quiz-editor-header">
-                    <span>🔘 单选题编辑</span>
+                    <div class="qb-editor-type-dropdown">
+                      <button class="qb-editor-type-btn" id="qbQuizTypeBtn" onclick="toggleEditorTypeMenu(this)">🔘 单选题</button>
+                      <div class="qb-card-type-menu qb-editor-type-menu">
+                        <button onclick="switchQuizEditorType('single')">🔘 单选题</button>
+                        <button onclick="switchQuizEditorType('multiple')">🟡 多选题</button>
+                        <button onclick="switchQuizEditorType('short')">📝 简答题</button>
+                        <button onclick="switchToContentEditor('markdown')">📝 Markdown</button>
+                        <button onclick="switchToContentEditor('video')">🎬 视频</button>
+                        <button onclick="switchToContentEditor('file')">📁 文件</button>
+                      </div>
+                    </div>
                     <button class="quiz-editor-close" onclick="qbCloseQuizEditor()" title="关闭">✕</button>
                   </div>
                   <div class="quiz-editor-body">
@@ -2058,7 +2076,17 @@ tr:hover td { background: rgba(99,102,241,0.02); }
                 <!-- Content Editor Panel -->
                 <div class="quiz-editor-panel" id="qbContentEditorPanel">
                   <div class="quiz-editor-header">
-                    <span id="qbContentEditorHeader">📝 Markdown 编辑</span>
+                    <div class="qb-editor-type-dropdown">
+                      <button class="qb-editor-type-btn" id="qbContentTypeBtn" onclick="toggleEditorTypeMenu(this)">📝 Markdown</button>
+                      <div class="qb-card-type-menu qb-editor-type-menu">
+                        <button onclick="switchToQuizEditor('single')">🔘 单选题</button>
+                        <button onclick="switchToQuizEditor('multiple')">🟡 多选题</button>
+                        <button onclick="switchToQuizEditor('short')">📝 简答题</button>
+                        <button onclick="switchContentEditorType('markdown')">📝 Markdown</button>
+                        <button onclick="switchContentEditorType('video')">🎬 视频</button>
+                        <button onclick="switchContentEditorType('file')">📁 文件</button>
+                      </div>
+                    </div>
                     <button class="quiz-editor-close" onclick="qbCloseContentEditor()" title="关闭">✕</button>
                   </div>
                   <div class="quiz-editor-body">
@@ -3255,10 +3283,96 @@ function toggleCardTypeMenu(dropdown) {
 
 // Close card type menus on outside click
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('.qb-card-type-dropdown')) {
+  if (!e.target.closest('.qb-card-type-dropdown') && !e.target.closest('.qb-editor-type-dropdown')) {
     document.querySelectorAll('.qb-card-type-menu.active').forEach(function(m) { m.classList.remove('active'); });
   }
 });
+
+// Editor type switching
+function toggleEditorTypeMenu(btn) {
+  var menu = btn.nextElementSibling;
+  document.querySelectorAll('.qb-card-type-menu.active').forEach(function(m) {
+    if (m !== menu) m.classList.remove('active');
+  });
+  menu.classList.toggle('active');
+}
+
+function switchQuizEditorType(type) {
+  // Close the menu
+  document.querySelectorAll('.qb-card-type-menu.active').forEach(function(m) { m.classList.remove('active'); });
+  currentQBType = type;
+  var btn = document.getElementById('qbQuizTypeBtn');
+  if (type === 'multiple') btn.textContent = '🟡 多选题';
+  else if (type === 'short') btn.textContent = '📝 简答题';
+  else btn.textContent = '🔘 单选题';
+
+  // Preserve question text
+  var question = document.getElementById('qbQuizQuestion').value;
+
+  // Reset options
+  var list = document.getElementById('qbQuizOptionsList');
+  list.innerHTML = '';
+  var optionsField = document.getElementById('qbQuizOptionsField');
+  if (type === 'short') {
+    optionsField.style.display = 'none';
+  } else {
+    optionsField.style.display = '';
+    for (var i = 0; i < 2; i++) qbAddQuizOption();
+  }
+
+  // Restore question
+  document.getElementById('qbQuizQuestion').value = question;
+  document.getElementById('qbQuizQuestion').focus();
+}
+
+function switchContentEditorType(type) {
+  document.querySelectorAll('.qb-card-type-menu.active').forEach(function(m) { m.classList.remove('active'); });
+  currentQBContentType = type;
+  var btn = document.getElementById('qbContentTypeBtn');
+  var mdField = document.getElementById('qbContentMdField');
+  var videoField = document.getElementById('qbContentVideoField');
+  var fileField = document.getElementById('qbContentFileField');
+  mdField.style.display = 'none';
+  videoField.style.display = 'none';
+  fileField.style.display = 'none';
+
+  if (type === 'markdown') {
+    btn.textContent = '📝 Markdown';
+    mdField.style.display = '';
+  } else if (type === 'video') {
+    btn.textContent = '🎬 视频';
+    videoField.style.display = '';
+    // Reset video state
+    qbContentVideoFile = null;
+    var vpreview = document.getElementById('qbContentEditorPanel').querySelector('.assignment-video-preview');
+    vpreview.classList.remove('has-video'); vpreview.innerHTML = '';
+    var vdrop = document.getElementById('qbContentEditorPanel').querySelector('.assignment-video-dropzone');
+    vdrop.style.display = '';
+    var vtag = document.getElementById('qbContentEditorPanel').querySelector('.assignment-video-file-tag');
+    if (vtag) vtag.remove();
+  } else if (type === 'file') {
+    btn.textContent = '📁 文件';
+    fileField.style.display = '';
+    qbContentFiles = [];
+    var ftags = document.getElementById('qbContentEditorPanel').querySelector('.assignment-file-tags');
+    ftags.innerHTML = '';
+  }
+  document.getElementById('qbContentTitle').focus();
+}
+
+function switchToContentEditor(type) {
+  var title = document.getElementById('qbQuizQuestion').value;
+  qbCloseQuizEditor();
+  qbOpenContentEditor(type);
+  if (title) document.getElementById('qbContentTitle').value = title;
+}
+
+function switchToQuizEditor(type) {
+  var title = document.getElementById('qbContentTitle').value;
+  qbCloseContentEditor();
+  qbOpenQuizEditor(type);
+  if (title) document.getElementById('qbQuizQuestion').value = title;
+}
 
 function qbOpenQuizEditor(type) {
   // Close content editor if open
@@ -3270,11 +3384,11 @@ function qbOpenQuizEditor(type) {
   document.getElementById('qbQuizQuestion').value = '';
   list.innerHTML = '';
 
-  // Update header
-  const header = panel.querySelector('.quiz-editor-header span');
-  if (currentQBType === 'multiple') header.textContent = '🟡 多选题编辑';
-  else if (currentQBType === 'short') header.textContent = '📝 简答题编辑';
-  else header.textContent = '🔘 单选题编辑';
+  // Update header button
+  var hdrBtn = document.getElementById('qbQuizTypeBtn');
+  if (currentQBType === 'multiple') hdrBtn.textContent = '🟡 多选题';
+  else if (currentQBType === 'short') hdrBtn.textContent = '📝 简答题';
+  else hdrBtn.textContent = '🔘 单选题';
 
   // Show/hide options field
   if (currentQBType === 'short') {
@@ -3596,7 +3710,7 @@ function qbOpenContentEditor(type) {
   qbCloseQuizEditor();
 
   var panel = document.getElementById('qbContentEditorPanel');
-  var header = document.getElementById('qbContentEditorHeader');
+  var hdrBtn = document.getElementById('qbContentTypeBtn');
   document.getElementById('qbContentTitle').value = '';
   document.getElementById('qbContentDesc').value = '';
 
@@ -3609,11 +3723,11 @@ function qbOpenContentEditor(type) {
   fileField.style.display = 'none';
 
   if (type === 'markdown') {
-    header.textContent = '📝 Markdown 编辑';
+    hdrBtn.textContent = '📝 Markdown';
     mdField.style.display = '';
     document.getElementById('qbContentMd').value = '';
   } else if (type === 'video') {
-    header.textContent = '🎬 视频编辑';
+    hdrBtn.textContent = '🎬 视频';
     videoField.style.display = '';
     // Reset video
     qbContentVideoFile = null;
@@ -3625,7 +3739,7 @@ function qbOpenContentEditor(type) {
     var vtag = panel.querySelector('.assignment-video-file-tag');
     if (vtag) vtag.remove();
   } else if (type === 'file') {
-    header.textContent = '📁 文件编辑';
+    hdrBtn.textContent = '📁 文件';
     fileField.style.display = '';
     // Reset files
     var ftags = panel.querySelector('.assignment-file-tags');
