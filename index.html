@@ -2017,10 +2017,6 @@ tr:hover td { background: rgba(99,102,241,0.02); }
                       <label>题目描述（必填）</label>
                       <textarea class="quiz-question-input" id="qbContentDesc" style="min-height:60px;resize:vertical;" placeholder="请输入题目描述"></textarea>
                     </div>
-                    <div class="quiz-field">
-                      <label>评分标准（必填）</label>
-                      <textarea class="quiz-question-input" id="qbContentScoring" style="min-height:60px;resize:vertical;" placeholder="请输入评分标准"></textarea>
-                    </div>
                     <!-- Markdown-only fields -->
                     <div class="quiz-field" id="qbContentMdField">
                       <label>Markdown 内容</label>
@@ -3515,7 +3511,6 @@ function qbOpenContentEditor(type) {
   var header = document.getElementById('qbContentEditorHeader');
   document.getElementById('qbContentTitle').value = '';
   document.getElementById('qbContentDesc').value = '';
-  document.getElementById('qbContentScoring').value = '';
 
   // Update type selector active state
   document.querySelectorAll('.qb-type-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -3570,19 +3565,16 @@ let qbContentFiles = [];
 function qbSaveContent() {
   var title = document.getElementById('qbContentTitle').value.trim();
   var desc = document.getElementById('qbContentDesc').value.trim();
-  var scoring = document.getElementById('qbContentScoring').value.trim();
 
   // Validate required fields
   if (!title) { qbShowContentError('标题不能为空', '请输入标题后再保存。'); return; }
   if (!desc) { qbShowContentError('题目描述不能为空', '请输入题目描述后再保存。'); return; }
-  if (!scoring) { qbShowContentError('评分标准不能为空', '请输入评分标准后再保存。'); return; }
 
   var data = {
     type: 'content',
     contentType: currentQBContentType,
     title: title,
-    description: desc,
-    scoring: scoring
+    description: desc
   };
 
   if (currentQBContentType === 'markdown') {
