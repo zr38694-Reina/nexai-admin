@@ -3499,6 +3499,7 @@ function addAssignmentContent(type) {
     card.innerHTML = headerHTML +
       '<input class="assignment-question-input" type="text" placeholder="请输入标题">' +
       '<textarea class="assignment-question-desc" placeholder="请输入题目描述（可选）..." style="min-height:60px;margin-bottom:8px;font-family:inherit;font-size:13px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);outline:none;resize:vertical;color:var(--text-primary);background:var(--bg-card);"></textarea>' +
+      '<textarea class="assignment-scoring" placeholder="请输入评分标准（可选）..." style="min-height:60px;margin-bottom:8px;font-family:inherit;font-size:13px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);outline:none;resize:vertical;color:var(--text-primary);background:var(--bg-card);"></textarea>' +
       '<div class="assignment-md-toolbar">' +
         '<button onclick="insertAssignmentMdImage(this)" title="插入图片">🖼 图片</button>' +
         '<button onclick="insertAssignmentMdVideo(this)" title="插入视频">🎬 视频</button>' +
@@ -3508,6 +3509,7 @@ function addAssignmentContent(type) {
     card.innerHTML = headerHTML +
       '<input class="assignment-question-input" type="text" placeholder="请输入视频标题">' +
       '<textarea class="assignment-question-md" placeholder="请输入视频描述（可选）..." style="min-height:60px;"></textarea>' +
+      '<textarea class="assignment-scoring" placeholder="请输入评分标准（可选）..." style="min-height:60px;margin-bottom:8px;font-family:inherit;font-size:13px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);outline:none;resize:vertical;color:var(--text-primary);background:var(--bg-card);"></textarea>' +
       '<div class="assignment-video-dropzone" id="vidDrop-' + index + '" onclick="this.querySelector(\'input[type=file]\').click()">' +
         '<div class="video-icon">🎬</div>' +
         '<div class="video-text">点击上传视频文件</div>' +
@@ -3519,6 +3521,7 @@ function addAssignmentContent(type) {
     card.innerHTML = headerHTML +
       '<input class="assignment-question-input" type="text" placeholder="请输入文件说明">' +
       '<textarea class="assignment-question-md" placeholder="请输入补充描述（可选）..." style="min-height:60px;"></textarea>' +
+      '<textarea class="assignment-scoring" placeholder="请输入评分标准（可选）..." style="min-height:60px;margin-bottom:8px;font-family:inherit;font-size:13px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);outline:none;resize:vertical;color:var(--text-primary);background:var(--bg-card);"></textarea>' +
       '<div class="assignment-file-dropzone" onclick="this.querySelector(\'input[type=file]\').click()">' +
         '<div class="file-icon">📤</div>' +
         '<div class="file-text">点击上传文件</div>' +
@@ -3665,6 +3668,8 @@ function saveAssignment() {
     var title = titleInput ? titleInput.value.trim() : '';
     var mdInput = card.querySelector('.assignment-question-md');
     var mdContent = mdInput ? mdInput.value : '';
+    var scoringInput = card.querySelector('.assignment-scoring');
+    var scoring = scoringInput ? scoringInput.value : '';
 
     if (type === 'markdown') {
       var descInput = card.querySelector('.assignment-question-desc');
@@ -3673,6 +3678,7 @@ function saveAssignment() {
         type: 'markdown',
         title: title,
         description: descInput ? descInput.value : '',
+        scoring: scoring,
         content: mdContent
       });
     } else if (type === 'video') {
@@ -3682,6 +3688,7 @@ function saveAssignment() {
         type: 'video',
         title: title,
         description: mdContent,
+        scoring: scoring,
         videoFileName: videoFile ? videoFile.name : ''
       });
     } else if (type === 'file') {
@@ -3694,6 +3701,7 @@ function saveAssignment() {
         type: 'file',
         title: title,
         description: mdContent,
+        scoring: scoring,
         files: fileNames
       });
     }
