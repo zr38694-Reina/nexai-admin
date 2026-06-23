@@ -706,10 +706,9 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 /* Saved quiz cards inside the markdown editor */
 .saved-quizzes-container {
   display: flex; flex-direction: column; gap: 12px; padding: 12px 16px;
-  border-bottom: 1px solid var(--border); overflow-y: auto; flex-shrink: 0;
-  max-height: 50%;
+  overflow-y: auto; flex: 1; min-height: 0;
 }
-.saved-quizzes-container:empty { display: none; }
+
 .saved-quiz-card {
   background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px;
   padding: 14px 16px; position: relative;
@@ -782,7 +781,13 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 .qb-type-btn:hover { background: var(--bg-sidebar-hover); }
 .qb-type-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .qb-left-panel .quiz-editor-wrap { flex: 1; min-height: 0; }
-.qb-left-panel .saved-quizzes-container { max-height: 35%; }
+.saved-cards-list:empty { display: none; }
+.saved-quizzes-container .quiz-editor-panel {
+  flex: none;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  overflow: hidden;
+}
 .qb-left-panel .quiz-editor-panel.active ~ .subsection-md-editor { display: none; }
 
 /* ===== Assignment Editor ===== */
@@ -2028,10 +2033,8 @@ tr:hover td { background: rgba(99,102,241,0.02); }
             <!-- Left: Quiz Area -->
             <div class="qb-left-panel">
               <div class="quiz-editor-wrap">
-                <div class="saved-quizzes-container" id="qbSavedQuizzesContainer"></div>
-                <div class="qb-add-bar">
-                  <button class="qb-add-btn" onclick="qbOpenQuizEditor('single')">+ 添加题目</button>
-                </div>
+                <div class="saved-quizzes-container" id="qbSavedQuizzesContainer">
+                  <div class="saved-cards-list" id="qbSavedCardsList"></div>
                 <div class="quiz-editor-panel" id="qbQuizEditorPanel">
                   <div class="quiz-editor-header">
                     <div class="qb-editor-type-dropdown">
@@ -2143,6 +2146,10 @@ tr:hover td { background: rgba(99,102,241,0.02); }
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+            <div class="qb-add-bar">
+                <button class="qb-add-btn" onclick="qbOpenQuizEditor('single')">+ 添加题目</button>
               </div>
             </div>
             <!-- Right: Bank Info -->
@@ -3204,8 +3211,8 @@ function editQuestionBank(btn) {
   // Restore quiz cards
   qbCloseQuizEditor();
   qbCloseContentEditor();
-  const container = document.getElementById('qbSavedQuizzesContainer');
-  container.innerHTML = '';
+  const list = document.getElementById('qbSavedCardsList');
+  list.innerHTML = '';
   let cards = [];
   try { cards = JSON.parse(row.getAttribute('data-quiz-cards') || '[]'); } catch(e) {}
   qbRestoreQuizCards(cards);
@@ -3482,9 +3489,9 @@ function qbSaveQuiz() {
 
   if (errorMsg) { qbShowQuizError(errorMsg, errorDetail); return; }
 
-  const container = document.getElementById('qbSavedQuizzesContainer');
-  const cardIndex = container.children.length;
-  qbCreateQuizCard(container, cardIndex, question, options, currentQBType);
+  const list = document.getElementById('qbSavedCardsList');
+  const cardIndex = list.children.length;
+  qbCreateQuizCard(list, cardIndex, question, options, currentQBType);
   qbCloseQuizEditor();
 }
 
@@ -3580,8 +3587,8 @@ function qbCreateQuizCard(container, index, question, options, quizType) {
 }
 
 function qbCopyQuizCard(sourceCard) {
-  const container = document.getElementById('qbSavedQuizzesContainer');
-  const newIndex = container.children.length;
+  const list = document.getElementById('qbSavedCardsList');
+  const newIndex = list.children.length;
   const clone = sourceCard.cloneNode(true);
   clone.setAttribute('data-quiz-index', newIndex);
   // Copy custom data for content cards
@@ -3596,7 +3603,7 @@ function qbCopyQuizCard(sourceCard) {
   copyBtn.addEventListener('click', function(e) { e.stopPropagation(); qbCopyQuizCard(clone); });
   const deleteBtn = clone.querySelector('.saved-quiz-delete-btn');
   deleteBtn.addEventListener('click', function(e) { e.stopPropagation(); qbDeleteQuizCard(clone); });
-  container.appendChild(clone);
+  list.appendChild(clone);
 }
 
 function qbDeleteQuizCard(card) {
@@ -3605,8 +3612,8 @@ function qbDeleteQuizCard(card) {
 }
 
 function qbRenumberQuizCards() {
-  const container = document.getElementById('qbSavedQuizzesContainer');
-  Array.from(container.children).forEach((card, i) => {
+  const list = document.getElementById('qbSavedCardsList');
+  Array.from(list.children).forEach((card, i) => {
     card.setAttribute('data-quiz-index', i);
     const numSpan = card.querySelector('.saved-quiz-number');
     if (numSpan) numSpan.textContent = '题号 ' + (i + 1);
@@ -3617,8 +3624,8 @@ function qbRenumberQuizCards() {
 
 function qbCollectQuizCards() {
   const cards = [];
-  const container = document.getElementById('qbSavedQuizzesContainer');
-  Array.from(container.children).forEach(card => {
+  const list = document.getElementById('qbSavedCardsList');
+  Array.from(list.children).forEach(card => {
     var cardType = card.getAttribute('data-card-type');
     if (cardType === 'content') {
       // Content card: restore from stored data
@@ -3648,15 +3655,15 @@ function qbCollectQuizCards() {
 }
 
 function qbRestoreQuizCards(cards) {
-  const container = document.getElementById('qbSavedQuizzesContainer');
-  container.innerHTML = '';
+  const list = document.getElementById('qbSavedCardsList');
+  list.innerHTML = '';
   cards.forEach(function(c, i) {
     if (c.type === 'content') {
-      qbCreateContentCard(container, i, c);
+      qbCreateContentCard(list, i, c);
     } else {
       // Rebuild options with index field
       var opts = (c.options || []).map(function(o, j) { return { text: o.text, correct: o.correct, index: j }; });
-      qbCreateQuizCard(container, i, c.question, opts, c.quizType);
+      qbCreateQuizCard(list, i, c.question, opts, c.quizType);
     }
   });
 }
@@ -3782,9 +3789,9 @@ function qbSaveContent() {
     data.files = qbContentFiles.map(function(f) { return f.name; });
   }
 
-  var container = document.getElementById('qbSavedQuizzesContainer');
-  var cardIndex = container.children.length;
-  qbCreateContentCard(container, cardIndex, data);
+  var list = document.getElementById('qbSavedCardsList');
+  var cardIndex = list.children.length;
+  qbCreateContentCard(list, cardIndex, data);
   qbCloseContentEditor();
 }
 
