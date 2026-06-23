@@ -3455,8 +3455,8 @@ function qbSelectCorrectOption(row) {
 
 function qbSaveQuiz() {
   const question = document.getElementById('qbQuizQuestion').value.trim();
-  const list = document.getElementById('qbQuizOptionsList');
-  const rows = list.children;
+  const optionsList = document.getElementById('qbQuizOptionsList');
+  const rows = optionsList.children;
 
   const options = [];
   const correctIndices = [];
