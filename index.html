@@ -922,6 +922,29 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 .saved-quiz-card[data-quiz-type="short"] .saved-quiz-type-badge { background: rgba(6,182,212,0.12); color: #0891b2; }
 .saved-quiz-card[data-card-type="content"] .saved-quiz-type-badge { background: rgba(16,185,129,0.12); color: #059669; }
 
+.qb-card-type-btn {
+  cursor: pointer; border: none; font-family: inherit;
+  transition: all 0.15s ease;
+}
+.qb-card-type-btn:hover { opacity: 0.8; transform: scale(1.05); }
+
+.qb-card-type-dropdown { position: relative; flex-shrink: 0; }
+.qb-card-type-menu {
+  display: none; position: absolute; top: 100%; left: 0; margin-top: 4px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50; min-width: 140px;
+  overflow: hidden; flex-direction: column;
+}
+.qb-card-type-menu.active { display: flex; }
+.qb-card-type-menu button {
+  display: flex; align-items: center; gap: 8px; padding: 9px 14px;
+  font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer;
+  border: none; background: none; font-family: inherit; text-align: left;
+  white-space: nowrap; transition: all 0.1s ease;
+}
+.qb-card-type-menu button:hover { background: var(--bg-sidebar-hover); color: var(--accent-light); }
+.qb-card-type-menu button + button { border-top: 1px solid var(--border); }
+
 /* Assignment content type cards */
 .assignment-question-number {
   font-size: 12px; font-weight: 700; color: var(--accent);
@@ -1999,17 +2022,7 @@ tr:hover td { background: rgba(99,102,241,0.02); }
               <div class="quiz-editor-wrap">
                 <div class="saved-quizzes-container" id="qbSavedQuizzesContainer"></div>
                 <div class="qb-add-bar">
-                  <div class="qb-add-dropdown-wrap">
-                    <button class="qb-add-btn" onclick="toggleQbAddDropdown()">+ 添加题目</button>
-                    <div class="qb-add-dropdown-menu" id="qbAddDropdownMenu">
-                      <button class="qb-add-dropdown-item" onclick="qbOpenQuizEditor('single')">🔘 单选题</button>
-                      <button class="qb-add-dropdown-item" onclick="qbOpenQuizEditor('multiple')">🟡 多选题</button>
-                      <button class="qb-add-dropdown-item" onclick="qbOpenQuizEditor('short')">📝 简答题</button>
-                      <button class="qb-add-dropdown-item" onclick="qbOpenContentEditor('markdown')">📝 Markdown</button>
-                      <button class="qb-add-dropdown-item" onclick="qbOpenContentEditor('video')">🎬 视频</button>
-                      <button class="qb-add-dropdown-item" onclick="qbOpenContentEditor('file')">📁 文件</button>
-                    </div>
-                  </div>
+                  <button class="qb-add-btn" onclick="qbOpenQuizEditor('single')">+ 添加题目</button>
                 </div>
                 <div class="quiz-editor-panel" id="qbQuizEditorPanel">
                   <div class="quiz-editor-header">
@@ -3232,23 +3245,23 @@ function saveQuestionBank() {
 // ===== Question Bank Quiz Editor =====
 let currentQBType = 'single';
 
-function toggleQbAddDropdown() {
-  var menu = document.getElementById('qbAddDropdownMenu');
-  menu.classList.toggle('active');
+function toggleCardTypeMenu(dropdown) {
+  // Close all other menus first
+  document.querySelectorAll('.qb-card-type-menu.active').forEach(function(m) {
+    if (m !== dropdown.querySelector('.qb-card-type-menu')) m.classList.remove('active');
+  });
+  dropdown.querySelector('.qb-card-type-menu').classList.toggle('active');
 }
 
-// Close dropdown on outside click
+// Close card type menus on outside click
 document.addEventListener('click', function(e) {
-  var btn = document.querySelector('.qb-add-btn');
-  var menu = document.getElementById('qbAddDropdownMenu');
-  if (menu && btn && !btn.contains(e.target) && !menu.contains(e.target)) {
-    menu.classList.remove('active');
+  if (!e.target.closest('.qb-card-type-dropdown')) {
+    document.querySelectorAll('.qb-card-type-menu.active').forEach(function(m) { m.classList.remove('active'); });
   }
 });
 
 function qbOpenQuizEditor(type) {
-  // Close dropdown & content editor
-  document.getElementById('qbAddDropdownMenu').classList.remove('active');
+  // Close content editor if open
   qbCloseContentEditor();
   currentQBType = type || 'single';
   const panel = document.getElementById('qbQuizEditorPanel');
@@ -3378,9 +3391,25 @@ function qbCreateQuizCard(container, index, question, options, quizType) {
   number.className = 'saved-quiz-number';
   number.textContent = '题号 ' + (index + 1);
 
-  var typeBadge = document.createElement('span');
-  typeBadge.className = 'saved-quiz-type-badge';
-  typeBadge.textContent = icon + ' ' + typeLabel;
+  // Type-switching dropdown
+  var typeDropdown = document.createElement('div');
+  typeDropdown.className = 'qb-card-type-dropdown';
+  typeDropdown.setAttribute('data-current-type', quizType);
+  var typeBtn = document.createElement('button');
+  typeBtn.className = 'saved-quiz-type-badge qb-card-type-btn';
+  typeBtn.textContent = icon + ' ' + typeLabel;
+  typeBtn.onclick = function(e) { e.stopPropagation(); toggleCardTypeMenu(typeDropdown); };
+  var typeMenu = document.createElement('div');
+  typeMenu.className = 'qb-card-type-menu';
+  typeMenu.innerHTML =
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenQuizEditor(\'single\')">🔘 单选题</button>' +
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenQuizEditor(\'multiple\')">🟡 多选题</button>' +
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenQuizEditor(\'short\')">📝 简答题</button>' +
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenContentEditor(\'markdown\')">📝 Markdown</button>' +
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenContentEditor(\'video\')">🎬 视频</button>' +
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenContentEditor(\'file\')">📁 文件</button>';
+  typeDropdown.appendChild(typeBtn);
+  typeDropdown.appendChild(typeMenu);
 
   var headerRight = document.createElement('div');
   headerRight.className = 'saved-quiz-header-right';
@@ -3400,7 +3429,7 @@ function qbCreateQuizCard(container, index, question, options, quizType) {
   headerRight.appendChild(copyBtn);
   headerRight.appendChild(deleteBtn);
   header.appendChild(number);
-  header.appendChild(typeBadge);
+  header.appendChild(typeDropdown);
   header.appendChild(headerRight);
 
   var qEl = document.createElement('div');
@@ -3563,8 +3592,7 @@ let qbContentVideoFile = null;
 
 function qbOpenContentEditor(type) {
   currentQBContentType = type || 'markdown';
-  // Close dropdown & quiz editor
-  document.getElementById('qbAddDropdownMenu').classList.remove('active');
+  // Close quiz editor first
   qbCloseQuizEditor();
 
   var panel = document.getElementById('qbContentEditorPanel');
@@ -3664,9 +3692,25 @@ function qbCreateContentCard(container, index, data) {
   number.className = 'saved-quiz-number';
   number.textContent = '题号 ' + (index + 1);
 
-  var typeBadge = document.createElement('span');
-  typeBadge.className = 'saved-quiz-type-badge';
-  typeBadge.textContent = icon + ' ' + typeLabel;
+  // Type-switching dropdown
+  var typeDropdown = document.createElement('div');
+  typeDropdown.className = 'qb-card-type-dropdown';
+  typeDropdown.setAttribute('data-current-type', data.contentType);
+  var typeBtn = document.createElement('button');
+  typeBtn.className = 'saved-quiz-type-badge qb-card-type-btn';
+  typeBtn.textContent = icon + ' ' + typeLabel;
+  typeBtn.onclick = function(e) { e.stopPropagation(); toggleCardTypeMenu(typeDropdown); };
+  var typeMenu = document.createElement('div');
+  typeMenu.className = 'qb-card-type-menu';
+  typeMenu.innerHTML =
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenQuizEditor(\'single\')">🔘 单选题</button>' +
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenQuizEditor(\'multiple\')">🟡 多选题</button>' +
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenQuizEditor(\'short\')">📝 简答题</button>' +
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenContentEditor(\'markdown\')">📝 Markdown</button>' +
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenContentEditor(\'video\')">🎬 视频</button>' +
+    '<button onclick="event.stopPropagation();var c=this.closest(\'.saved-quiz-card\');c.remove();qbRenumberQuizCards();qbOpenContentEditor(\'file\')">📁 文件</button>';
+  typeDropdown.appendChild(typeBtn);
+  typeDropdown.appendChild(typeMenu);
 
   var headerRight = document.createElement('div');
   headerRight.className = 'saved-quiz-header-right';
@@ -3684,7 +3728,7 @@ function qbCreateContentCard(container, index, data) {
   headerRight.appendChild(copyBtn);
   headerRight.appendChild(deleteBtn);
   header.appendChild(number);
-  header.appendChild(typeBadge);
+  header.appendChild(typeDropdown);
   header.appendChild(headerRight);
 
   // Body
