@@ -824,10 +824,6 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 .assignment-question-card-header {
   display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
 }
-.assignment-question-number {
-  font-size: 12px; font-weight: 700; color: var(--accent);
-  background: var(--accent-bg); padding: 3px 10px; border-radius: 100px;
-}
 .assignment-question-delete {
   width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border-light);
   background: var(--bg-card); cursor: pointer; color: var(--text-muted); font-size: 14px;
@@ -891,21 +887,59 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 .assignment-dropdown-item + .assignment-dropdown-item { border-top: 1px solid var(--border); }
 
 /* Assignment content type cards */
-.assignment-question-card[data-type="video"] .assignment-question-number { background: rgba(245,158,11,0.12); color: #d97706; }
-.assignment-question-card[data-type="file"] .assignment-question-number { background: rgba(6,182,212,0.12); color: #0891b2; }
-.assignment-video-url {
-  width: 100%; height: 36px; padding: 0 12px; border-radius: 8px; margin-top: 8px;
-  border: 1px solid var(--border-light); font-size: 13px; font-family: inherit;
-  color: var(--text-primary); background: var(--bg-card); outline: none;
-  transition: border-color 0.15s ease;
+.assignment-question-number {
+  font-size: 12px; font-weight: 700; color: var(--accent);
+  background: var(--accent-bg); padding: 3px 10px; border-radius: 100px;
 }
-.assignment-video-url:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.assignment-question-type-badge {
+  font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 100px;
+  background: var(--bg-primary); color: var(--text-muted);
+}
+.assignment-question-card[data-type="video"] .assignment-question-type-badge { background: rgba(245,158,11,0.12); color: #d97706; }
+.assignment-question-card[data-type="file"] .assignment-question-type-badge { background: rgba(6,182,212,0.12); color: #0891b2; }
+
+/* Markdown mini toolbar */
+.assignment-md-toolbar {
+  display: flex; align-items: center; gap: 4px; margin-bottom: 8px;
+}
+.assignment-md-toolbar button {
+  height: 26px; padding: 0 10px; border-radius: 5px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card);
+  color: var(--text-secondary); transition: all 0.15s ease; font-family: inherit;
+  white-space: nowrap;
+}
+.assignment-md-toolbar button:hover { background: var(--bg-primary); border-color: rgba(0,0,0,0.2); }
+.assignment-md-toolbar .toolbar-sep { width: 1px; height: 16px; background: var(--border); margin: 0 3px; }
+
+/* Video upload dropzone */
+.assignment-video-dropzone {
+  margin-top: 8px; border: 2px dashed var(--border-light); border-radius: 10px;
+  padding: 24px 16px; text-align: center; cursor: pointer;
+  transition: all 0.2s ease; background: var(--bg-card);
+}
+.assignment-video-dropzone:hover { border-color: var(--accent); background: rgba(99,102,241,0.03); }
+.assignment-video-dropzone .video-icon { font-size: 28px; margin-bottom: 6px; }
+.assignment-video-dropzone .video-text { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+.assignment-video-dropzone .video-hint { font-size: 11px; color: var(--text-muted); }
+.assignment-video-dropzone input[type="file"] { display: none; }
+.assignment-video-file-tag {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+  padding: 6px 10px; border-radius: 6px; background: rgba(245,158,11,0.08);
+  font-size: 12px; color: #d97706; font-weight: 500;
+}
+.assignment-video-file-tag button {
+  width: 16px; height: 16px; border-radius: 50%; border: none; background: transparent;
+  cursor: pointer; color: var(--text-muted); font-size: 12px; line-height: 1;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.assignment-video-file-tag button:hover { background: var(--rose-bg); color: var(--rose); }
 .assignment-video-preview {
   margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-light);
   background: #000; display: none;
 }
 .assignment-video-preview.has-video { display: block; }
 .assignment-video-preview video { width: 100%; max-height: 240px; display: block; }
+
 .assignment-file-dropzone {
   margin-top: 8px; border: 2px dashed var(--border-light); border-radius: 10px;
   padding: 24px 16px; text-align: center; cursor: pointer;
@@ -3445,36 +3479,45 @@ function addAssignmentContent(type) {
   // Close dropdown
   document.getElementById('assignmentDropdownMenu').classList.remove('active');
 
-  const list = document.getElementById('assignmentQuestionsList');
-  const index = list.children.length;
-  const card = document.createElement('div');
+  var list = document.getElementById('assignmentQuestionsList');
+  var index = list.children.length;
+  var card = document.createElement('div');
   card.className = 'assignment-question-card';
   card.setAttribute('data-type', type);
 
-  if (type === 'markdown') {
-    card.innerHTML =
-      '<div class="assignment-question-card-header">' +
-        '<span class="assignment-question-number">Markdown ' + (index + 1) + '</span>' +
-        '<button class="assignment-question-delete" onclick="deleteAssignmentQuestion(this)" title="删除">×</button>' +
+  var typeLabel = type === 'video' ? '视频' : type === 'file' ? '文件' : 'Markdown';
+  var headerHTML =
+    '<div class="assignment-question-card-header">' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<span class="assignment-question-number">题号 ' + (index + 1) + '</span>' +
+        '<span class="assignment-question-type-badge">' + (type === 'markdown' ? '📝 Markdown' : type === 'video' ? '🎬 视频' : '📁 文件') + '</span>' +
       '</div>' +
+      '<button class="assignment-question-delete" onclick="deleteAssignmentQuestion(this)" title="删除">×</button>' +
+    '</div>';
+
+  if (type === 'markdown') {
+    card.innerHTML = headerHTML +
       '<input class="assignment-question-input" type="text" placeholder="请输入标题">' +
+      '<div class="assignment-md-toolbar">' +
+        '<button onclick="insertAssignmentMdImage(this)" title="插入图片">🖼 图片</button>' +
+        '<button onclick="insertAssignmentMdVideo(this)" title="插入视频">🎬 视频</button>' +
+      '</div>' +
       '<textarea class="assignment-question-md" placeholder="在此编写内容（支持 Markdown）..."></textarea>';
   } else if (type === 'video') {
-    card.innerHTML =
-      '<div class="assignment-question-card-header">' +
-        '<span class="assignment-question-number">🎬 视频 ' + (index + 1) + '</span>' +
-        '<button class="assignment-question-delete" onclick="deleteAssignmentQuestion(this)" title="删除">×</button>' +
-      '</div>' +
+    card.innerHTML = headerHTML +
       '<input class="assignment-question-input" type="text" placeholder="请输入视频标题">' +
-      '<input class="assignment-video-url" type="text" placeholder="请输入视频 URL（支持 mp4 / m3u8）" oninput="updateAssignmentVideoPreview(this)">' +
+      '<textarea class="assignment-question-md" placeholder="请输入视频描述（可选）..." style="min-height:60px;"></textarea>' +
+      '<div class="assignment-video-dropzone" id="vidDrop-' + index + '" onclick="this.querySelector(\'input[type=file]\').click()">' +
+        '<div class="video-icon">🎬</div>' +
+        '<div class="video-text">点击上传视频文件</div>' +
+        '<div class="video-hint">支持 MP4 / MOV / WebM</div>' +
+        '<input type="file" accept="video/*" onchange="handleAssignmentVideoInput(this)">' +
+      '</div>' +
       '<div class="assignment-video-preview"></div>';
   } else if (type === 'file') {
-    card.innerHTML =
-      '<div class="assignment-question-card-header">' +
-        '<span class="assignment-question-number">📁 文件 ' + (index + 1) + '</span>' +
-        '<button class="assignment-question-delete" onclick="deleteAssignmentQuestion(this)" title="删除">×</button>' +
-      '</div>' +
+    card.innerHTML = headerHTML +
       '<input class="assignment-question-input" type="text" placeholder="请输入文件说明">' +
+      '<textarea class="assignment-question-md" placeholder="请输入补充描述（可选）..." style="min-height:60px;"></textarea>' +
       '<div class="assignment-file-dropzone" onclick="this.querySelector(\'input[type=file]\').click()">' +
         '<div class="file-icon">📤</div>' +
         '<div class="file-text">点击上传文件</div>' +
@@ -3493,34 +3536,87 @@ function addAssignmentContent(type) {
   }, 50);
 }
 
-function updateAssignmentVideoPreview(input) {
-  var card = input.closest('.assignment-question-card');
-  var preview = card.querySelector('.assignment-video-preview');
-  var url = input.value.trim();
+// Markdown toolbar helpers
+function insertAssignmentMdImage(btn) {
+  var card = btn.closest('.assignment-question-card');
+  var ta = card.querySelector('.assignment-question-md');
+  var url = prompt('请输入图片 URL：');
   if (url) {
-    preview.classList.add('has-video');
-    preview.innerHTML = '<video controls src="' + url.replace(/"/g, '&quot;') + '"></video>';
-  } else {
-    preview.classList.remove('has-video');
-    preview.innerHTML = '';
+    var start = ta.selectionStart;
+    ta.setRangeText('![](' + url + ')', start, ta.selectionEnd, 'end');
+    ta.focus();
   }
 }
 
-// Per-card file storage: keyed by card index via a WeakMap-like approach using card._files
+function insertAssignmentMdVideo(btn) {
+  var card = btn.closest('.assignment-question-card');
+  var ta = card.querySelector('.assignment-question-md');
+  var url = prompt('请输入视频 URL：');
+  if (url) {
+    var start = ta.selectionStart;
+    ta.setRangeText('<video controls src="' + url + '"></video>', start, ta.selectionEnd, 'end');
+    ta.focus();
+  }
+}
+
+// Video file upload handler
+function handleAssignmentVideoInput(input) {
+  var card = input.closest('.assignment-question-card');
+  var dropzone = card.querySelector('.assignment-video-dropzone');
+  var preview = card.querySelector('.assignment-video-preview');
+
+  var file = input.files[0];
+  if (!file) return;
+
+  // Clear previous
+  var oldTag = card.querySelector('.assignment-video-file-tag');
+  if (oldTag) oldTag.remove();
+
+  card._videoFile = file;
+
+  // Show file tag
+  var tag = document.createElement('div');
+  tag.className = 'assignment-video-file-tag';
+  tag.innerHTML = '🎬 ' + file.name + ' <button onclick="removeAssignmentVideo(this)" title="移除">×</button>';
+  dropzone.parentNode.insertBefore(tag, preview);
+
+  // Show preview via object URL
+  var url = URL.createObjectURL(file);
+  preview.classList.add('has-video');
+  preview.innerHTML = '<video controls src="' + url + '"></video>';
+
+  // Hide dropzone
+  dropzone.style.display = 'none';
+
+  input.value = '';
+}
+
+function removeAssignmentVideo(btn) {
+  var card = btn.closest('.assignment-question-card');
+  var dropzone = card.querySelector('.assignment-video-dropzone');
+  var preview = card.querySelector('.assignment-video-preview');
+  var tag = card.querySelector('.assignment-video-file-tag');
+
+  if (tag) tag.remove();
+  preview.classList.remove('has-video');
+  preview.innerHTML = '';
+  dropzone.style.display = '';
+  card._videoFile = null;
+}
+
+// Per-card file storage
 function handleAssignmentFileInput(input) {
   var card = input.closest('.assignment-question-card');
   var tags = card.querySelector('.assignment-file-tags');
   if (!card._files) card._files = [];
 
   Array.from(input.files).forEach(function(file) {
-    // Check extension
     var ext = '.' + file.name.split('.').pop().toLowerCase();
     var allowed = ['.py','.ipynb','.txt','.pdf','.json','.csv','.xlsx'];
     if (allowed.indexOf(ext) === -1) {
       alert('不支持的文件类型：' + file.name + '\n仅支持 .py .ipynb .txt .pdf .json .csv .xlsx');
       return;
     }
-    // Avoid duplicates
     if (card._files.some(function(f) { return f.name === file.name && f.size === file.size; })) return;
 
     card._files.push(file);
@@ -3532,17 +3628,14 @@ function handleAssignmentFileInput(input) {
     tags.appendChild(tag);
   });
 
-  // Reset input so same file can be re-selected
   input.value = '';
 }
 
 function removeAssignmentFile(btn, filename) {
   var card = btn.closest('.assignment-question-card');
   var tags = card.querySelector('.assignment-file-tags');
-  // Remove tag
   var tag = tags.querySelector('.assignment-file-item[data-filename="' + CSS.escape(filename) + '"]');
   if (tag) tag.remove();
-  // Remove from data
   if (card._files) {
     card._files = card._files.filter(function(f) { return f.name !== filename; });
   }
@@ -3558,12 +3651,7 @@ function renumberAssignmentQuestions() {
   var list = document.getElementById('assignmentQuestionsList');
   Array.from(list.children).forEach(function(card, i) {
     var numSpan = card.querySelector('.assignment-question-number');
-    var type = card.getAttribute('data-type');
-    if (numSpan) {
-      if (type === 'video') numSpan.textContent = '🎬 视频 ' + (i + 1);
-      else if (type === 'file') numSpan.textContent = '📁 文件 ' + (i + 1);
-      else numSpan.textContent = 'Markdown ' + (i + 1);
-    }
+    if (numSpan) numSpan.textContent = '题号 ' + (i + 1);
   });
 }
 
@@ -3574,22 +3662,24 @@ function saveAssignment() {
     var type = card.getAttribute('data-type') || 'markdown';
     var titleInput = card.querySelector('.assignment-question-input');
     var title = titleInput ? titleInput.value.trim() : '';
+    var mdInput = card.querySelector('.assignment-question-md');
+    var desc = mdInput ? mdInput.value : '';
 
     if (type === 'markdown') {
-      var mdInput = card.querySelector('.assignment-question-md');
       items.push({
         number: i + 1,
         type: 'markdown',
         title: title,
-        content: mdInput ? mdInput.value : ''
+        content: desc
       });
     } else if (type === 'video') {
-      var videoInput = card.querySelector('.assignment-video-url');
+      var videoFile = card._videoFile || null;
       items.push({
         number: i + 1,
         type: 'video',
         title: title,
-        videoUrl: videoInput ? videoInput.value.trim() : ''
+        description: desc,
+        videoFileName: videoFile ? videoFile.name : ''
       });
     } else if (type === 'file') {
       var fileNames = [];
@@ -3600,16 +3690,16 @@ function saveAssignment() {
         number: i + 1,
         type: 'file',
         title: title,
+        description: desc,
         files: fileNames
       });
     }
   });
 
-  // Validate at least one item has content
   var hasContent = items.some(function(item) {
     if (item.title) return true;
     if (item.type === 'markdown' && item.content) return true;
-    if (item.type === 'video' && item.videoUrl) return true;
+    if (item.type === 'video' && item.videoFileName) return true;
     if (item.type === 'file' && item.files && item.files.length) return true;
     return false;
   });
