@@ -3498,11 +3498,12 @@ function addAssignmentContent(type) {
   if (type === 'markdown') {
     card.innerHTML = headerHTML +
       '<input class="assignment-question-input" type="text" placeholder="请输入标题">' +
+      '<textarea class="assignment-question-desc" placeholder="请输入题目描述（可选）..." style="min-height:60px;margin-bottom:8px;font-family:inherit;font-size:13px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);outline:none;resize:vertical;color:var(--text-primary);background:var(--bg-card);"></textarea>' +
       '<div class="assignment-md-toolbar">' +
         '<button onclick="insertAssignmentMdImage(this)" title="插入图片">🖼 图片</button>' +
         '<button onclick="insertAssignmentMdVideo(this)" title="插入视频">🎬 视频</button>' +
       '</div>' +
-      '<textarea class="assignment-question-md" placeholder="在此编写内容（支持 Markdown）..."></textarea>';
+      '<textarea class="assignment-question-md" placeholder="在此编写 Markdown 内容..."></textarea>';
   } else if (type === 'video') {
     card.innerHTML = headerHTML +
       '<input class="assignment-question-input" type="text" placeholder="请输入视频标题">' +
@@ -3663,14 +3664,16 @@ function saveAssignment() {
     var titleInput = card.querySelector('.assignment-question-input');
     var title = titleInput ? titleInput.value.trim() : '';
     var mdInput = card.querySelector('.assignment-question-md');
-    var desc = mdInput ? mdInput.value : '';
+    var mdContent = mdInput ? mdInput.value : '';
 
     if (type === 'markdown') {
+      var descInput = card.querySelector('.assignment-question-desc');
       items.push({
         number: i + 1,
         type: 'markdown',
         title: title,
-        content: desc
+        description: descInput ? descInput.value : '',
+        content: mdContent
       });
     } else if (type === 'video') {
       var videoFile = card._videoFile || null;
@@ -3678,7 +3681,7 @@ function saveAssignment() {
         number: i + 1,
         type: 'video',
         title: title,
-        description: desc,
+        description: mdContent,
         videoFileName: videoFile ? videoFile.name : ''
       });
     } else if (type === 'file') {
@@ -3690,7 +3693,7 @@ function saveAssignment() {
         number: i + 1,
         type: 'file',
         title: title,
-        description: desc,
+        description: mdContent,
         files: fileNames
       });
     }
