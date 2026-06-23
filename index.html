@@ -1077,6 +1077,151 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 }
 .subsection-form-cancel:hover { background: var(--bg-primary); border-color: rgba(0,0,0,0.2); }
 .subsection-form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+
+/* ===== Scoring Criteria Modal ===== */
+.btn-sm--view { color: var(--accent); }
+.btn-sm--view:hover { background: var(--accent-bg); border-color: var(--accent); }
+
+.scoring-modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 1000; align-items: center; justify-content: center;
+}
+.scoring-modal-overlay.active { display: flex; }
+
+.scoring-modal {
+  width: 960px; max-width: 95vw; max-height: 85vh; background: var(--bg-primary);
+  border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+.scoring-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  background: var(--bg-card); flex-shrink: 0;
+}
+.scoring-modal-title { font-size: 16px; font-weight: 700; }
+.scoring-modal-close {
+  width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border-light);
+  background: var(--bg-card); cursor: pointer; display: flex; align-items: center;
+  justify-content: center; color: var(--text-muted); font-size: 16px; line-height: 1;
+  transition: all 0.15s ease;
+}
+.scoring-modal-close:hover { background: var(--rose-bg); color: var(--rose); border-color: var(--rose); }
+
+.scoring-modal-body {
+  display: flex; flex: 1; min-height: 0; overflow: hidden;
+}
+
+/* Left Panel — question list */
+.scoring-left-panel {
+  flex: 1; min-width: 0; overflow-y: auto; padding: 16px;
+  border-right: 1px solid var(--border); background: var(--bg-card);
+}
+.scoring-left-header {
+  font-size: 14px; font-weight: 700; margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.scoring-select-all {
+  font-size: 12px; font-weight: 500; color: var(--accent); cursor: pointer;
+  border: none; background: none; font-family: inherit;
+}
+.scoring-select-all:hover { text-decoration: underline; }
+
+.scoring-question-item {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;
+  border-radius: 8px; border: 1px solid var(--border-light); margin-bottom: 8px;
+  background: var(--bg-primary); cursor: pointer; transition: all 0.15s ease;
+}
+.scoring-question-item:hover { border-color: var(--border); }
+.scoring-question-item.selected { border-color: var(--accent); background: var(--accent-bg); }
+
+.scoring-q-checkbox {
+  width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--border);
+  background: var(--bg-card); cursor: pointer; flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;
+}
+.scoring-question-item.selected .scoring-q-checkbox {
+  background: var(--accent); border-color: var(--accent);
+}
+.scoring-q-checkbox::after {
+  content: ''; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg); margin-top: -2px; display: none;
+}
+.scoring-question-item.selected .scoring-q-checkbox::after { display: block; }
+
+.scoring-q-info { flex: 1; min-width: 0; }
+.scoring-q-title {
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.scoring-q-meta {
+  font-size: 11px; color: var(--text-muted); margin-top: 2px;
+  display: flex; gap: 8px;
+}
+.scoring-q-badge {
+  font-size: 10px; font-weight: 600; padding: 1px 8px; border-radius: 100px;
+  background: var(--accent-bg); color: var(--accent);
+}
+
+/* Right Panel — scoring criteria */
+.scoring-right-panel {
+  flex: 1; min-width: 0; overflow-y: auto; padding: 16px;
+  background: var(--bg-primary);
+}
+.scoring-right-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+}
+.scoring-right-title { font-size: 14px; font-weight: 700; }
+.scoring-generate-btn {
+  height: 34px; padding: 0 16px; border-radius: 7px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; background: var(--accent); color: #fff;
+  font-family: inherit; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px;
+}
+.scoring-generate-btn:hover { background: var(--accent-light); }
+.scoring-generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.scoring-empty {
+  text-align: center; padding: 60px 20px; color: var(--text-muted);
+}
+.scoring-empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+.scoring-result-item {
+  margin-bottom: 24px; background: var(--bg-card); border-radius: 10px;
+  border: 1px solid var(--border-light); overflow: hidden;
+}
+.scoring-result-header {
+  padding: 12px 16px; background: var(--bg-primary); border-bottom: 1px solid var(--border);
+  font-size: 13px; font-weight: 700; color: var(--text-primary);
+  display: flex; align-items: center; gap: 8px;
+}
+.scoring-result-number {
+  background: var(--accent); color: #fff; width: 24px; height: 24px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+}
+
+/* Scoring Table */
+.scoring-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.scoring-table thead th {
+  padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px;
+  color: var(--text-muted); background: var(--bg-primary);
+  border-bottom: 2px solid var(--border); white-space: nowrap;
+}
+.scoring-table tbody td {
+  padding: 10px 14px; border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary); vertical-align: top;
+}
+.scoring-table tbody tr:last-child td { border-bottom: none; }
+.scoring-table tbody tr:hover td { background: var(--bg-primary); }
+
+.scoring-table .scoring-dimension { font-weight: 600; white-space: nowrap; }
+.scoring-table .scoring-weight {
+  color: var(--accent); font-weight: 700; text-align: center; white-space: nowrap;
+}
+.scoring-table .scoring-points {
+  color: var(--accent); font-weight: 700; text-align: center; white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -1454,15 +1599,15 @@ tr:hover td { background: rgba(99,102,241,0.02); }
                 <tbody id="questionBankTableBody">
                   <tr>
                     <td>1</td><td style="font-weight:600;">AI 基础概念题库</td><td>15</td><td>AI 基础</td><td>2026-06-10</td>
-                    <td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>
+                    <td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm btn-sm--view" onclick="viewQuestionBank(this)">查看</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>
                   </tr>
                   <tr>
                     <td>2</td><td style="font-weight:600;">提示词工程练习题库</td><td>20</td><td>AI 技能</td><td>2026-06-12</td>
-                    <td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>
+                    <td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm btn-sm--view" onclick="viewQuestionBank(this)">查看</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>
                   </tr>
                   <tr>
                     <td>3</td><td style="font-weight:600;">大模型开发实战题库</td><td>30</td><td>AI 开发</td><td>2026-06-15</td>
-                    <td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>
+                    <td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm btn-sm--view" onclick="viewQuestionBank(this)">查看</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>
                   </tr>
                 </tbody>
               </table>
@@ -2174,6 +2319,31 @@ tr:hover td { background: rgba(99,102,241,0.02); }
                 <textarea id="qbDesc" rows="3" placeholder="请输入题库描述"></textarea>
               </div>
               <button class="btn-sm btn-sm--primary" onclick="saveQuestionBank()" style="width:100%;margin-top:4px;">保存题库</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Scoring Criteria Modal ===== -->
+      <div class="scoring-modal-overlay" id="scoringModalOverlay" onclick="if(event.target===this)closeScoringModal()">
+        <div class="scoring-modal">
+          <div class="scoring-modal-header">
+            <span class="scoring-modal-title" id="scoringModalTitle">查看题库</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <button class="scoring-generate-btn" id="scoringGenerateBtn" onclick="generateScoringCriteria()">⚡ 一键生成评分指标</button>
+              <button class="scoring-modal-close" onclick="closeScoringModal()" title="关闭">✕</button>
+            </div>
+          </div>
+          <div class="scoring-modal-body">
+            <!-- Left: Question List -->
+            <div class="scoring-left-panel" id="scoringLeftPanel"></div>
+            <!-- Right: Scoring Criteria -->
+            <div class="scoring-right-panel">
+              <div class="scoring-empty" id="scoringEmpty">
+                <div class="scoring-empty-icon">📋</div>
+                <div>勾选左侧题目后点击右上方「一键生成评分指标」按钮</div>
+              </div>
+              <div id="scoringResults"></div>
             </div>
           </div>
         </div>
@@ -3193,7 +3363,7 @@ function createQuestionBank() {
     '<td>0</td>' +
     '<td>—</td>' +
     '<td>' + dateStr + '</td>' +
-    '<td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>';
+    '<td><div class="actions"><button class="btn-sm" onclick="editQuestionBank(this)">编辑</button><button class="btn-sm btn-sm--view" onclick="viewQuestionBank(this)">查看</button><button class="btn-sm" onclick="copyQuestionBank(this)">复制</button><button class="btn-sm btn-sm--danger" onclick="deleteQuestionBank(this)">删除</button></div></td>';
   // Store quiz cards data on the row
   tr.setAttribute('data-quiz-cards', '[]');
   tbody.appendChild(tr);
@@ -3230,6 +3400,7 @@ function copyQuestionBank(btn) {
   newRow.querySelectorAll('button').forEach(b => {
     const txt = b.textContent.trim();
     if (txt === '编辑') b.setAttribute('onclick', 'editQuestionBank(this)');
+    else if (txt === '查看') b.setAttribute('onclick', 'viewQuestionBank(this)');
     else if (txt === '复制') b.setAttribute('onclick', 'copyQuestionBank(this)');
     else if (txt === '删除') b.setAttribute('onclick', 'deleteQuestionBank(this)');
   });
@@ -3253,6 +3424,144 @@ function closeQuestionBankEditor() {
   qbCloseQuizEditor();
   qbCloseContentEditor();
 }
+
+// ===== Scoring Criteria Modal =====
+let scoringCurrentRow = null;
+
+function viewQuestionBank(btn) {
+  const row = btn.closest('tr');
+  scoringCurrentRow = row;
+  const name = row.querySelector('td:nth-child(2)').textContent.trim();
+  document.getElementById('scoringModalTitle').textContent = '查看题库 — ' + name;
+
+  // Load quiz cards
+  let cards = [];
+  try { cards = JSON.parse(row.getAttribute('data-quiz-cards') || '[]'); } catch(e) { cards = []; }
+
+  renderScoringQuestions(cards);
+
+  // Reset right panel
+  document.getElementById('scoringResults').innerHTML = '';
+  document.getElementById('scoringEmpty').style.display = '';
+  document.getElementById('scoringGenerateBtn').disabled = false;
+
+  document.getElementById('scoringModalOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeScoringModal() {
+  document.getElementById('scoringModalOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+  scoringCurrentRow = null;
+}
+
+function renderScoringQuestions(cards) {
+  const panel = document.getElementById('scoringLeftPanel');
+  var html = '<div class="scoring-left-header"><span>题目列表 (' + cards.length + ')</span>';
+  html += '<button class="scoring-select-all" onclick="toggleSelectAllQuestions()">全选 / 取消</button></div>';
+
+  cards.forEach(function(c, i) {
+    var title = '', badge = '', typeLabel = '';
+    if (c.type === 'content') {
+      title = escHtml(c.title || '未命名');
+      badge = c.contentType === 'video' ? '🎬 视频' : c.contentType === 'file' ? '📁 文件' : '📝 Markdown';
+      typeLabel = '内容';
+    } else {
+      title = escHtml(c.question || '未命名');
+      badge = c.quizType === 'multiple' ? '🟡 多选' : c.quizType === 'short' ? '📝 简答' : '🔘 单选';
+      typeLabel = '习题';
+    }
+    html += '<div class="scoring-question-item" data-qindex="' + i + '" onclick="toggleScoringQuestion(this)">';
+    html += '<div class="scoring-q-checkbox"></div>';
+    html += '<div class="scoring-q-info">';
+    html += '<div class="scoring-q-title">' + (i + 1) + '. ' + title + '</div>';
+    html += '<div class="scoring-q-meta"><span class="scoring-q-badge">' + badge + '</span><span>' + typeLabel + '</span></div>';
+    html += '</div></div>';
+  });
+
+  if (cards.length === 0) {
+    html = '<div class="scoring-left-header"><span>题目列表 (0)</span></div>';
+    html += '<div style="text-align:center;padding:40px 20px;color:var(--text-muted);">该题库暂无题目</div>';
+  }
+
+  panel.innerHTML = html;
+}
+
+function toggleScoringQuestion(item) {
+  item.classList.toggle('selected');
+  updateGenerateBtn();
+}
+
+function toggleSelectAllQuestions() {
+  var items = document.querySelectorAll('#scoringLeftPanel .scoring-question-item');
+  var allSelected = true;
+  items.forEach(function(item) { if (!item.classList.contains('selected')) allSelected = false; });
+  items.forEach(function(item) {
+    if (allSelected) item.classList.remove('selected');
+    else item.classList.add('selected');
+  });
+  updateGenerateBtn();
+}
+
+function updateGenerateBtn() {
+  var selected = document.querySelectorAll('#scoringLeftPanel .scoring-question-item.selected').length;
+  var btn = document.getElementById('scoringGenerateBtn');
+  if (selected === 0) {
+    btn.textContent = '⚡ 一键生成评分指标';
+  } else {
+    btn.textContent = '⚡ 一键生成评分指标 (' + selected + '题)';
+  }
+}
+
+function generateScoringCriteria() {
+  var selectedItems = document.querySelectorAll('#scoringLeftPanel .scoring-question-item.selected');
+  if (selectedItems.length === 0) {
+    alert('请先勾选需要生成评分指标的题目');
+    return;
+  }
+
+  var row = scoringCurrentRow;
+  var cards = [];
+  try { cards = JSON.parse(row.getAttribute('data-quiz-cards') || '[]'); } catch(e) { cards = []; }
+
+  var resultsHtml = '';
+  selectedItems.forEach(function(item) {
+    var idx = parseInt(item.getAttribute('data-qindex'));
+    var card = cards[idx];
+    if (!card) return;
+    var title = card.type === 'content' ? (card.title || '未命名') : (card.question || '未命名');
+
+    resultsHtml += '<div class="scoring-result-item">';
+    resultsHtml += '<div class="scoring-result-header">';
+    resultsHtml += '<span class="scoring-result-number">' + (idx + 1) + '</span>';
+    resultsHtml += escHtml(title);
+    resultsHtml += '</div>';
+    resultsHtml += '<table class="scoring-table">';
+    resultsHtml += '<thead><tr><th>评分维度</th><th>权重</th><th>评分标准</th><th>满分</th></tr></thead>';
+    resultsHtml += '<tbody>';
+    resultsHtml += '<tr><td class="scoring-dimension">内容完整性</td><td class="scoring-weight">30%</td><td>覆盖所有关键知识点，逻辑清晰</td><td class="scoring-points">30</td></tr>';
+    resultsHtml += '<tr><td class="scoring-dimension">准确性</td><td class="scoring-weight">30%</td><td>概念准确，无事实性错误</td><td class="scoring-points">30</td></tr>';
+    resultsHtml += '<tr><td class="scoring-dimension">表达清晰度</td><td class="scoring-weight">20%</td><td>语言通顺，条理分明，易于理解</td><td class="scoring-points">20</td></tr>';
+    resultsHtml += '<tr><td class="scoring-dimension">深度与创新</td><td class="scoring-weight">20%</td><td>有独立见解或创新点，分析深入</td><td class="scoring-points">20</td></tr>';
+    resultsHtml += '</tbody></table>';
+    resultsHtml += '</div>';
+  });
+
+  document.getElementById('scoringResults').innerHTML = resultsHtml;
+  document.getElementById('scoringEmpty').style.display = 'none';
+  document.getElementById('scoringGenerateBtn').disabled = true;
+  document.getElementById('scoringGenerateBtn').textContent = '✅ 已生成评分指标';
+}
+
+// ESC to close scoring modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var overlay = document.getElementById('scoringModalOverlay');
+    if (overlay && overlay.classList.contains('active')) {
+      closeScoringModal();
+    }
+  }
+});
 
 function saveQuestionBank() {
   const name = document.getElementById('qbName').value.trim();
