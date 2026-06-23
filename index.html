@@ -1371,7 +1371,6 @@ tr:hover td { background: rgba(99,102,241,0.02); }
             <option>职业转型</option>
           </select>
           <button class="topbar-btn topbar-btn-primary" onclick="createQuestionBank()">+ 创建题库</button>
-          <button class="topbar-btn topbar-btn-primary" onclick="openAssignmentEditor()">+ 创建实训作业</button>
         </div>
         <div class="card">
           <div class="card-body card-body--no-padding">
@@ -1965,6 +1964,10 @@ tr:hover td { background: rgba(99,102,241,0.02); }
                 <button class="qb-type-btn" data-qb-type="single" onclick="qbOpenQuizEditor('single')">🔘 单选题</button>
                 <button class="qb-type-btn" data-qb-type="multiple" onclick="qbOpenQuizEditor('multiple')">🟡 多选题</button>
                 <button class="qb-type-btn" data-qb-type="short" onclick="qbOpenQuizEditor('short')">📝 简答题</button>
+                <span class="toolbar-sep" style="margin:0 4px;"></span>
+                <button class="qb-type-btn" data-qb-type="markdown" onclick="qbOpenContentEditor('markdown')">📝 Markdown</button>
+                <button class="qb-type-btn" data-qb-type="video" onclick="qbOpenContentEditor('video')">🎬 视频</button>
+                <button class="qb-type-btn" data-qb-type="file" onclick="qbOpenContentEditor('file')">📁 文件</button>
               </div>
               <div class="quiz-editor-wrap">
                 <div class="saved-quizzes-container" id="qbSavedQuizzesContainer"></div>
@@ -1999,6 +2002,70 @@ tr:hover td { background: rgba(99,102,241,0.02); }
                     </div>
                   </div>
                 </div>
+                <!-- Content Editor Panel -->
+                <div class="quiz-editor-panel" id="qbContentEditorPanel">
+                  <div class="quiz-editor-header">
+                    <span id="qbContentEditorHeader">📝 Markdown 编辑</span>
+                    <button class="quiz-editor-close" onclick="qbCloseContentEditor()" title="关闭">✕</button>
+                  </div>
+                  <div class="quiz-editor-body">
+                    <div class="quiz-field">
+                      <label>标题（必填）</label>
+                      <input class="quiz-question-input" id="qbContentTitle" type="text" placeholder="请输入标题">
+                    </div>
+                    <div class="quiz-field">
+                      <label>题目描述（必填）</label>
+                      <textarea class="quiz-question-input" id="qbContentDesc" style="min-height:60px;resize:vertical;" placeholder="请输入题目描述"></textarea>
+                    </div>
+                    <div class="quiz-field">
+                      <label>评分标准（必填）</label>
+                      <textarea class="quiz-question-input" id="qbContentScoring" style="min-height:60px;resize:vertical;" placeholder="请输入评分标准"></textarea>
+                    </div>
+                    <!-- Markdown-only fields -->
+                    <div class="quiz-field" id="qbContentMdField">
+                      <label>Markdown 内容</label>
+                      <div class="assignment-md-toolbar">
+                        <button onclick="qbInsertContentMdImage()" title="插入图片">🖼 图片</button>
+                        <button onclick="qbInsertContentMdVideo()" title="插入视频">🎬 视频</button>
+                      </div>
+                      <textarea class="assignment-question-md" id="qbContentMd" placeholder="在此编写 Markdown 内容..." style="min-height:120px;"></textarea>
+                    </div>
+                    <!-- Video-only fields -->
+                    <div class="quiz-field" id="qbContentVideoField" style="display:none;">
+                      <label>视频文件</label>
+                      <div class="assignment-video-dropzone" onclick="this.querySelector('input[type=file]').click()">
+                        <div class="video-icon">🎬</div>
+                        <div class="video-text">点击上传视频文件</div>
+                        <div class="video-hint">支持 MP4 / MOV / WebM</div>
+                        <input type="file" accept="video/*" onchange="qbHandleContentVideoInput(this)">
+                      </div>
+                      <div class="assignment-video-preview"></div>
+                    </div>
+                    <!-- File-only fields -->
+                    <div class="quiz-field" id="qbContentFileField" style="display:none;">
+                      <label>文件</label>
+                      <div class="assignment-file-dropzone" onclick="this.querySelector('input[type=file]').click()">
+                        <div class="file-icon">📤</div>
+                        <div class="file-text">点击上传文件</div>
+                        <div class="file-hint">支持 .py &middot; .ipynb &middot; .txt &middot; .pdf &middot; .json &middot; .csv &middot; .xlsx</div>
+                        <input type="file" accept=".py,.ipynb,.txt,.pdf,.json,.csv,.xlsx" onchange="qbHandleContentFileInput(this)" multiple>
+                      </div>
+                      <div class="assignment-file-tags"></div>
+                    </div>
+                  </div>
+                  <div class="quiz-editor-footer">
+                    <button class="quiz-cancel-btn" onclick="qbCloseContentEditor()">取消</button>
+                    <button class="quiz-save-btn" onclick="qbSaveContent()">保存</button>
+                  </div>
+                  <div class="quiz-error-overlay" id="qbContentErrorOverlay">
+                    <div class="quiz-error-dialog">
+                      <div class="quiz-error-icon">⚠️</div>
+                      <div class="quiz-error-msg" id="qbContentErrorMsg">保存失败</div>
+                      <div class="quiz-error-detail" id="qbContentErrorDetail"></div>
+                      <button class="quiz-error-btn" onclick="qbCloseContentError()">继续编辑</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <!-- Right: Bank Info -->
@@ -2023,38 +2090,6 @@ tr:hover td { background: rgba(99,102,241,0.02); }
                 <textarea id="qbDesc" rows="3" placeholder="请输入题库描述"></textarea>
               </div>
               <button class="btn-sm btn-sm--primary" onclick="saveQuestionBank()" style="width:100%;margin-top:4px;">保存题库</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== 实训作业编辑器 Modal ===== -->
-      <div class="md-modal-overlay" id="assignmentEditorOverlay">
-        <div class="md-modal">
-          <div class="md-modal-header">
-            <span class="md-modal-title" id="assignmentEditorTitle">创建实训作业</span>
-            <button class="md-modal-close" onclick="closeAssignmentEditor()" title="关闭">✕</button>
-          </div>
-          <div class="assignment-editor-body">
-            <!-- Left: Questions Area -->
-            <div class="assignment-left-panel">
-              <div class="assignment-questions-header">
-                <span>📝 题目列表</span>
-                <div class="assignment-dropdown-wrap" id="assignmentDropdownWrap">
-                  <button class="assignment-add-btn" onclick="toggleAssignmentDropdown()" title="新增内容">+</button>
-                  <div class="assignment-dropdown-menu" id="assignmentDropdownMenu">
-                    <button class="assignment-dropdown-item" onclick="addAssignmentContent('markdown')">📝 Markdown</button>
-                    <button class="assignment-dropdown-item" onclick="addAssignmentContent('video')">🎬 视频</button>
-                    <button class="assignment-dropdown-item" onclick="addAssignmentContent('file')">📁 文件</button>
-                  </div>
-                </div>
-              </div>
-              <div class="assignment-questions-list" id="assignmentQuestionsList">
-                <!-- dynamically filled -->
-              </div>
-              <div class="assignment-save-bar">
-                <button class="btn-sm btn-sm--primary" onclick="saveAssignment()">保存作业</button>
-              </div>
             </div>
           </div>
         </div>
@@ -3091,6 +3126,7 @@ function editQuestionBank(btn) {
   document.getElementById('qbDesc').value = '';
   // Restore quiz cards
   qbCloseQuizEditor();
+  qbCloseContentEditor();
   const container = document.getElementById('qbSavedQuizzesContainer');
   container.innerHTML = '';
   let cards = [];
@@ -3131,6 +3167,7 @@ function closeQuestionBankEditor() {
   document.body.style.overflow = '';
   currentEditingBankRow = null;
   qbCloseQuizEditor();
+  qbCloseContentEditor();
 }
 
 function saveQuestionBank() {
@@ -3160,6 +3197,8 @@ function saveQuestionBank() {
 let currentQBType = 'single';
 
 function qbOpenQuizEditor(type) {
+  // Close content editor if open
+  qbCloseContentEditor();
   currentQBType = type || 'single';
   const panel = document.getElementById('qbQuizEditorPanel');
   const list = document.getElementById('qbQuizOptionsList');
@@ -3382,22 +3421,30 @@ function qbCollectQuizCards() {
   const cards = [];
   const container = document.getElementById('qbSavedQuizzesContainer');
   Array.from(container.children).forEach(card => {
-    const quizType = card.getAttribute('data-quiz-type');
-    const qEl = card.querySelector('.saved-quiz-question');
-    let question = '';
-    if (qEl) {
-      // Remove icon, type label, and number prefix
-      question = qEl.textContent.replace(/^[🟢🟡📝]\s*(单选题|多选题|简答题)\s*—\s*\d+\.\s*/, '').trim();
+    var cardType = card.getAttribute('data-card-type');
+    if (cardType === 'content') {
+      // Content card: restore from stored data
+      if (card._contentData) {
+        cards.push(card._contentData);
+      }
+    } else {
+      // Quiz card
+      var quizType = card.getAttribute('data-quiz-type');
+      var qEl = card.querySelector('.saved-quiz-question');
+      var question = '';
+      if (qEl) {
+        question = qEl.textContent.replace(/^[🟢🟡📝]\s*(单选题|多选题|简答题)\s*—\s*\d+\.\s*/, '').trim();
+      }
+      var options = [];
+      var optionEls = card.querySelectorAll('.saved-quiz-option');
+      optionEls.forEach(function(opt) {
+        var isCorrect = opt.classList.contains('is-correct');
+        var textSpan = opt.querySelector('span:last-child');
+        var text = textSpan ? textSpan.textContent.trim() : '';
+        options.push({ text: text, correct: isCorrect, index: options.length });
+      });
+      cards.push({ type: 'quiz', quizType: quizType, question: question, options: options });
     }
-    const options = [];
-    const optionEls = card.querySelectorAll('.saved-quiz-option');
-    optionEls.forEach(opt => {
-      const isCorrect = opt.classList.contains('is-correct');
-      const textSpan = opt.querySelector('span:last-child');
-      const text = textSpan ? textSpan.textContent.trim() : '';
-      options.push({ text, correct: isCorrect, index: options.length });
-    });
-    cards.push({ quizType, question, options });
   });
   return cards;
 }
@@ -3405,10 +3452,14 @@ function qbCollectQuizCards() {
 function qbRestoreQuizCards(cards) {
   const container = document.getElementById('qbSavedQuizzesContainer');
   container.innerHTML = '';
-  cards.forEach((c, i) => {
-    // Rebuild options with index field
-    const opts = (c.options || []).map((o, j) => ({ text: o.text, correct: o.correct, index: j }));
-    qbCreateQuizCard(container, i, c.question, opts, c.quizType);
+  cards.forEach(function(c, i) {
+    if (c.type === 'content') {
+      qbCreateContentCard(container, i, c);
+    } else {
+      // Rebuild options with index field
+      var opts = (c.options || []).map(function(o, j) { return { text: o.text, correct: o.correct, index: j }; });
+      qbCreateQuizCard(container, i, c.question, opts, c.quizType);
+    }
   });
 }
 
@@ -3433,12 +3484,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // Extend global ESC handler for QB overlay
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && qbOverlay && qbOverlay.classList.contains('active')) {
-      // Only close if the inner quiz error is not active
-      const qbErr = document.getElementById('qbQuizErrorOverlay');
-      if (qbErr && qbErr.classList.contains('active')) {
+      // Only close if the inner error is not active
+      var qbQuizErr = document.getElementById('qbQuizErrorOverlay');
+      var qbContentErr = document.getElementById('qbContentErrorOverlay');
+      if (qbQuizErr && qbQuizErr.classList.contains('active')) {
         qbCloseQuizError();
+      } else if (qbContentErr && qbContentErr.classList.contains('active')) {
+        qbCloseContentError();
       } else if (document.getElementById('qbQuizEditorPanel').classList.contains('active')) {
         qbCloseQuizEditor();
+      } else if (document.getElementById('qbContentEditorPanel').classList.contains('active')) {
+        qbCloseContentEditor();
       } else {
         closeQuestionBankEditor();
       }
@@ -3446,173 +3502,208 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// ===== Assignment Editor =====
+// ===== Question Bank Content Editor =====
+let currentQBContentType = 'markdown';
+let qbContentVideoFile = null;
 
-function openAssignmentEditor() {
-  document.getElementById('assignmentEditorTitle').textContent = '创建实训作业';
-  document.getElementById('assignmentQuestionsList').innerHTML = '';
-  // Add one markdown block by default
-  addAssignmentContent('markdown');
-  document.getElementById('assignmentEditorOverlay').classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
+function qbOpenContentEditor(type) {
+  currentQBContentType = type || 'markdown';
+  // Close quiz editor first
+  qbCloseQuizEditor();
 
-function closeAssignmentEditor() {
-  document.getElementById('assignmentEditorOverlay').classList.remove('active');
-  document.body.style.overflow = '';
-}
+  var panel = document.getElementById('qbContentEditorPanel');
+  var header = document.getElementById('qbContentEditorHeader');
+  document.getElementById('qbContentTitle').value = '';
+  document.getElementById('qbContentDesc').value = '';
+  document.getElementById('qbContentScoring').value = '';
 
-function toggleAssignmentDropdown() {
-  const menu = document.getElementById('assignmentDropdownMenu');
-  menu.classList.toggle('active');
-}
+  // Update type selector active state
+  document.querySelectorAll('.qb-type-btn').forEach(function(b) { b.classList.remove('active'); });
+  var activeBtn = document.querySelector('.qb-type-btn[data-qb-type="' + type + '"]');
+  if (activeBtn) activeBtn.classList.add('active');
 
-// Close assignment dropdown on outside click
-document.addEventListener('click', function(e) {
-  const wrap = document.getElementById('assignmentDropdownWrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('assignmentDropdownMenu').classList.remove('active');
-  }
-});
-
-function addAssignmentContent(type) {
-  // Close dropdown
-  document.getElementById('assignmentDropdownMenu').classList.remove('active');
-
-  var list = document.getElementById('assignmentQuestionsList');
-  var index = list.children.length;
-  var card = document.createElement('div');
-  card.className = 'assignment-question-card';
-  card.setAttribute('data-type', type);
-
-  var typeLabel = type === 'video' ? '视频' : type === 'file' ? '文件' : 'Markdown';
-  var headerHTML =
-    '<div class="assignment-question-card-header">' +
-      '<div style="display:flex;align-items:center;gap:8px;">' +
-        '<span class="assignment-question-number">题号 ' + (index + 1) + '</span>' +
-        '<span class="assignment-question-type-badge">' + (type === 'markdown' ? '📝 Markdown' : type === 'video' ? '🎬 视频' : '📁 文件') + '</span>' +
-      '</div>' +
-      '<button class="assignment-question-delete" onclick="deleteAssignmentQuestion(this)" title="删除">×</button>' +
-    '</div>';
+  // Show/hide type-specific fields
+  var mdField = document.getElementById('qbContentMdField');
+  var videoField = document.getElementById('qbContentVideoField');
+  var fileField = document.getElementById('qbContentFileField');
+  mdField.style.display = 'none';
+  videoField.style.display = 'none';
+  fileField.style.display = 'none';
 
   if (type === 'markdown') {
-    card.innerHTML = headerHTML +
-      '<input class="assignment-question-input" type="text" placeholder="请输入标题（必填）">' +
-      '<textarea class="assignment-question-desc" placeholder="请输入题目描述（必填）" style="min-height:60px;margin-bottom:8px;font-family:inherit;font-size:13px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);outline:none;resize:vertical;color:var(--text-primary);background:var(--bg-card);"></textarea>' +
-      '<textarea class="assignment-scoring" placeholder="请输入评分标准（必填）" style="min-height:60px;margin-bottom:8px;font-family:inherit;font-size:13px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);outline:none;resize:vertical;color:var(--text-primary);background:var(--bg-card);"></textarea>' +
-      '<div class="assignment-md-toolbar">' +
-        '<button onclick="insertAssignmentMdImage(this)" title="插入图片">🖼 图片</button>' +
-        '<button onclick="insertAssignmentMdVideo(this)" title="插入视频">🎬 视频</button>' +
-      '</div>' +
-      '<textarea class="assignment-question-md" placeholder="在此编写 Markdown 内容..."></textarea>';
+    header.textContent = '📝 Markdown 编辑';
+    mdField.style.display = '';
+    document.getElementById('qbContentMd').value = '';
   } else if (type === 'video') {
-    card.innerHTML = headerHTML +
-      '<input class="assignment-question-input" type="text" placeholder="请输入视频标题（必填）">' +
-      '<textarea class="assignment-question-md" placeholder="请输入视频描述（必填）" style="min-height:60px;"></textarea>' +
-      '<textarea class="assignment-scoring" placeholder="请输入评分标准（必填）" style="min-height:60px;margin-bottom:8px;font-family:inherit;font-size:13px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);outline:none;resize:vertical;color:var(--text-primary);background:var(--bg-card);"></textarea>' +
-      '<div class="assignment-video-dropzone" id="vidDrop-' + index + '" onclick="this.querySelector(\'input[type=file]\').click()">' +
-        '<div class="video-icon">🎬</div>' +
-        '<div class="video-text">点击上传视频文件</div>' +
-        '<div class="video-hint">支持 MP4 / MOV / WebM</div>' +
-        '<input type="file" accept="video/*" onchange="handleAssignmentVideoInput(this)">' +
-      '</div>' +
-      '<div class="assignment-video-preview"></div>';
+    header.textContent = '🎬 视频编辑';
+    videoField.style.display = '';
+    // Reset video
+    qbContentVideoFile = null;
+    var vpreview = panel.querySelector('.assignment-video-preview');
+    vpreview.classList.remove('has-video');
+    vpreview.innerHTML = '';
+    var vdrop = panel.querySelector('.assignment-video-dropzone');
+    vdrop.style.display = '';
+    var vtag = panel.querySelector('.assignment-video-file-tag');
+    if (vtag) vtag.remove();
   } else if (type === 'file') {
-    card.innerHTML = headerHTML +
-      '<input class="assignment-question-input" type="text" placeholder="请输入文件说明（必填）">' +
-      '<textarea class="assignment-question-md" placeholder="请输入补充描述（必填）" style="min-height:60px;"></textarea>' +
-      '<textarea class="assignment-scoring" placeholder="请输入评分标准（必填）" style="min-height:60px;margin-bottom:8px;font-family:inherit;font-size:13px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);outline:none;resize:vertical;color:var(--text-primary);background:var(--bg-card);"></textarea>' +
-      '<div class="assignment-file-dropzone" onclick="this.querySelector(\'input[type=file]\').click()">' +
-        '<div class="file-icon">📤</div>' +
-        '<div class="file-text">点击上传文件</div>' +
-        '<div class="file-hint">支持 .py &middot; .ipynb &middot; .txt &middot; .pdf &middot; .json &middot; .csv &middot; .xlsx</div>' +
-        '<input type="file" accept=".py,.ipynb,.txt,.pdf,.json,.csv,.xlsx" onchange="handleAssignmentFileInput(this)" multiple>' +
-      '</div>' +
-      '<div class="assignment-file-tags"></div>';
+    header.textContent = '📁 文件编辑';
+    fileField.style.display = '';
+    // Reset files
+    var ftags = panel.querySelector('.assignment-file-tags');
+    ftags.innerHTML = '';
+    qbContentFiles = [];
   }
 
-  list.appendChild(card);
-
-  // Focus the first input
-  setTimeout(function() {
-    var input = card.querySelector('input[type="text"], .assignment-question-input');
-    if (input) input.focus();
-  }, 50);
+  panel.classList.add('active');
+  // Focus title
+  setTimeout(function() { document.getElementById('qbContentTitle').focus(); }, 50);
 }
 
-// Markdown toolbar helpers
-function insertAssignmentMdImage(btn) {
-  var card = btn.closest('.assignment-question-card');
-  var ta = card.querySelector('.assignment-question-md');
-  var url = prompt('请输入图片 URL：');
-  if (url) {
-    var start = ta.selectionStart;
-    ta.setRangeText('![](' + url + ')', start, ta.selectionEnd, 'end');
-    ta.focus();
+function qbCloseContentEditor() {
+  document.getElementById('qbContentEditorPanel').classList.remove('active');
+  document.getElementById('qbContentErrorOverlay').classList.remove('active');
+}
+
+let qbContentFiles = [];
+
+function qbSaveContent() {
+  var title = document.getElementById('qbContentTitle').value.trim();
+  var desc = document.getElementById('qbContentDesc').value.trim();
+  var scoring = document.getElementById('qbContentScoring').value.trim();
+
+  // Validate required fields
+  if (!title) { qbShowContentError('标题不能为空', '请输入标题后再保存。'); return; }
+  if (!desc) { qbShowContentError('题目描述不能为空', '请输入题目描述后再保存。'); return; }
+  if (!scoring) { qbShowContentError('评分标准不能为空', '请输入评分标准后再保存。'); return; }
+
+  var data = {
+    type: 'content',
+    contentType: currentQBContentType,
+    title: title,
+    description: desc,
+    scoring: scoring
+  };
+
+  if (currentQBContentType === 'markdown') {
+    data.markdown = document.getElementById('qbContentMd').value;
+  } else if (currentQBContentType === 'video') {
+    data.videoFileName = qbContentVideoFile ? qbContentVideoFile.name : '';
+  } else if (currentQBContentType === 'file') {
+    data.files = qbContentFiles.map(function(f) { return f.name; });
   }
+
+  var container = document.getElementById('qbSavedQuizzesContainer');
+  var cardIndex = container.children.length;
+  qbCreateContentCard(container, cardIndex, data);
+  qbCloseContentEditor();
 }
 
-function insertAssignmentMdVideo(btn) {
-  var card = btn.closest('.assignment-question-card');
-  var ta = card.querySelector('.assignment-question-md');
-  var url = prompt('请输入视频 URL：');
-  if (url) {
-    var start = ta.selectionStart;
-    ta.setRangeText('<video controls src="' + url + '"></video>', start, ta.selectionEnd, 'end');
-    ta.focus();
+function qbCreateContentCard(container, index, data) {
+  var card = document.createElement('div');
+  card.className = 'saved-quiz-card';
+  card.setAttribute('data-card-type', 'content');
+  card.setAttribute('data-card-index', index);
+  // Store full data as JSON for restore
+  card._contentData = data;
+
+  var icon = data.contentType === 'video' ? '🎬' : data.contentType === 'file' ? '📁' : '📝';
+  var typeLabel = data.contentType === 'video' ? '视频' : data.contentType === 'file' ? '文件' : 'Markdown';
+
+  // Header
+  var header = document.createElement('div');
+  header.className = 'saved-quiz-card-header';
+  var number = document.createElement('span');
+  number.className = 'saved-quiz-number';
+  number.textContent = '题号 ' + (index + 1);
+
+  var headerRight = document.createElement('div');
+  headerRight.className = 'saved-quiz-header-right';
+
+  var copyBtn = document.createElement('button');
+  copyBtn.className = 'saved-quiz-copy-btn';
+  copyBtn.innerHTML = '📋 复制';
+  copyBtn.addEventListener('click', function(e) { e.stopPropagation(); qbCopyQuizCard(card); });
+
+  var deleteBtn = document.createElement('button');
+  deleteBtn.className = 'saved-quiz-delete-btn';
+  deleteBtn.innerHTML = '🗑 删除';
+  deleteBtn.addEventListener('click', function(e) { e.stopPropagation(); qbDeleteQuizCard(card); });
+
+  headerRight.appendChild(copyBtn);
+  headerRight.appendChild(deleteBtn);
+  header.appendChild(number);
+  header.appendChild(headerRight);
+
+  // Body
+  var body = document.createElement('div');
+  body.className = 'saved-quiz-question';
+  body.innerHTML = icon + ' ' + typeLabel + ' — ' + (index + 1) + '. <b>' + data.title + '</b>';
+
+  // Description preview
+  var descEl = document.createElement('div');
+  descEl.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-top:6px;';
+  descEl.textContent = (data.description || '').substring(0, 80) + ((data.description || '').length > 80 ? '...' : '');
+
+  // Meta line
+  var metaEl = document.createElement('div');
+  metaEl.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:4px;display:flex;gap:12px;';
+  if (data.contentType === 'markdown') {
+    metaEl.textContent = '📏 ' + ((data.markdown || '').length > 0 ? '含 Markdown 内容' : '无内容');
+  } else if (data.contentType === 'video') {
+    metaEl.textContent = data.videoFileName ? '🎬 ' + data.videoFileName : '⚠ 未上传视频';
+  } else if (data.contentType === 'file') {
+    metaEl.textContent = (data.files && data.files.length) ? '📄 ' + data.files.join(', ') : '⚠ 未上传文件';
   }
+
+  card.appendChild(header);
+  card.appendChild(body);
+  card.appendChild(descEl);
+  card.appendChild(metaEl);
+  container.appendChild(card);
 }
 
-// Video file upload handler
-function handleAssignmentVideoInput(input) {
-  var card = input.closest('.assignment-question-card');
-  var dropzone = card.querySelector('.assignment-video-dropzone');
-  var preview = card.querySelector('.assignment-video-preview');
-
+// Video upload
+function qbHandleContentVideoInput(input) {
   var file = input.files[0];
   if (!file) return;
-
-  // Clear previous
-  var oldTag = card.querySelector('.assignment-video-file-tag');
+  var panel = document.getElementById('qbContentEditorPanel');
+  var dropzone = panel.querySelector('.assignment-video-dropzone');
+  var preview = panel.querySelector('.assignment-video-preview');
+  var oldTag = panel.querySelector('.assignment-video-file-tag');
   if (oldTag) oldTag.remove();
 
-  card._videoFile = file;
+  qbContentVideoFile = file;
 
-  // Show file tag
   var tag = document.createElement('div');
   tag.className = 'assignment-video-file-tag';
-  tag.innerHTML = '🎬 ' + file.name + ' <button onclick="removeAssignmentVideo(this)" title="移除">×</button>';
+  tag.innerHTML = '🎬 ' + file.name + ' <button onclick="qbRemoveContentVideo(this)" title="移除">×</button>';
   dropzone.parentNode.insertBefore(tag, preview);
 
-  // Show preview via object URL
   var url = URL.createObjectURL(file);
   preview.classList.add('has-video');
   preview.innerHTML = '<video controls src="' + url + '"></video>';
-
-  // Hide dropzone
   dropzone.style.display = 'none';
-
   input.value = '';
 }
 
-function removeAssignmentVideo(btn) {
-  var card = btn.closest('.assignment-question-card');
-  var dropzone = card.querySelector('.assignment-video-dropzone');
-  var preview = card.querySelector('.assignment-video-preview');
-  var tag = card.querySelector('.assignment-video-file-tag');
-
+function qbRemoveContentVideo(btn) {
+  var panel = document.getElementById('qbContentEditorPanel');
+  var dropzone = panel.querySelector('.assignment-video-dropzone');
+  var preview = panel.querySelector('.assignment-video-preview');
+  var tag = panel.querySelector('.assignment-video-file-tag');
   if (tag) tag.remove();
   preview.classList.remove('has-video');
   preview.innerHTML = '';
   dropzone.style.display = '';
-  card._videoFile = null;
+  qbContentVideoFile = null;
 }
 
-// Per-card file storage
-function handleAssignmentFileInput(input) {
-  var card = input.closest('.assignment-question-card');
-  var tags = card.querySelector('.assignment-file-tags');
-  if (!card._files) card._files = [];
+// File upload
+function qbHandleContentFileInput(input) {
+  var panel = document.getElementById('qbContentEditorPanel');
+  var tags = panel.querySelector('.assignment-file-tags');
+  if (!qbContentFiles) qbContentFiles = [];
 
   Array.from(input.files).forEach(function(file) {
     var ext = '.' + file.name.split('.').pop().toLowerCase();
@@ -3621,143 +3712,56 @@ function handleAssignmentFileInput(input) {
       alert('不支持的文件类型：' + file.name + '\n仅支持 .py .ipynb .txt .pdf .json .csv .xlsx');
       return;
     }
-    if (card._files.some(function(f) { return f.name === file.name && f.size === file.size; })) return;
-
-    card._files.push(file);
+    if (qbContentFiles.some(function(f) { return f.name === file.name && f.size === file.size; })) return;
+    qbContentFiles.push(file);
 
     var tag = document.createElement('span');
     tag.className = 'assignment-file-item';
-    tag.innerHTML = '📄 ' + file.name + ' <button onclick="removeAssignmentFile(this, \'' + file.name.replace(/'/g, "\\'") + '\')" title="移除">×</button>';
+    tag.innerHTML = '📄 ' + file.name + ' <button onclick="qbRemoveContentFile(this)" title="移除">×</button>';
     tag.setAttribute('data-filename', file.name);
     tags.appendChild(tag);
   });
-
   input.value = '';
 }
 
-function removeAssignmentFile(btn, filename) {
-  var card = btn.closest('.assignment-question-card');
-  var tags = card.querySelector('.assignment-file-tags');
-  var tag = tags.querySelector('.assignment-file-item[data-filename="' + CSS.escape(filename) + '"]');
-  if (tag) tag.remove();
-  if (card._files) {
-    card._files = card._files.filter(function(f) { return f.name !== filename; });
+function qbRemoveContentFile(btn) {
+  var tag = btn.closest('.assignment-file-item');
+  var filename = tag.getAttribute('data-filename');
+  tag.remove();
+  qbContentFiles = qbContentFiles.filter(function(f) { return f.name !== filename; });
+}
+
+// Markdown toolbar
+function qbInsertContentMdImage() {
+  var ta = document.getElementById('qbContentMd');
+  var url = prompt('请输入图片 URL：');
+  if (url) {
+    var start = ta.selectionStart;
+    ta.setRangeText('![](' + url + ')', start, ta.selectionEnd, 'end');
+    ta.focus();
   }
 }
 
-function deleteAssignmentQuestion(btn) {
-  var card = btn.closest('.assignment-question-card');
-  card.remove();
-  renumberAssignmentQuestions();
-}
-
-function renumberAssignmentQuestions() {
-  var list = document.getElementById('assignmentQuestionsList');
-  Array.from(list.children).forEach(function(card, i) {
-    var numSpan = card.querySelector('.assignment-question-number');
-    if (numSpan) numSpan.textContent = '题号 ' + (i + 1);
-  });
-}
-
-function saveAssignment() {
-  var items = [];
-  var list = document.getElementById('assignmentQuestionsList');
-  Array.from(list.children).forEach(function(card, i) {
-    var type = card.getAttribute('data-type') || 'markdown';
-    var titleInput = card.querySelector('.assignment-question-input');
-    var title = titleInput ? titleInput.value.trim() : '';
-    var mdInput = card.querySelector('.assignment-question-md');
-    var mdContent = mdInput ? mdInput.value : '';
-    var scoringInput = card.querySelector('.assignment-scoring');
-    var scoring = scoringInput ? scoringInput.value : '';
-
-    if (type === 'markdown') {
-      var descInput = card.querySelector('.assignment-question-desc');
-      items.push({
-        number: i + 1,
-        type: 'markdown',
-        title: title,
-        description: descInput ? descInput.value : '',
-        scoring: scoring,
-        content: mdContent
-      });
-    } else if (type === 'video') {
-      var videoFile = card._videoFile || null;
-      items.push({
-        number: i + 1,
-        type: 'video',
-        title: title,
-        description: mdContent,
-        scoring: scoring,
-        videoFileName: videoFile ? videoFile.name : ''
-      });
-    } else if (type === 'file') {
-      var fileNames = [];
-      if (card._files && card._files.length) {
-        fileNames = card._files.map(function(f) { return f.name; });
-      }
-      items.push({
-        number: i + 1,
-        type: 'file',
-        title: title,
-        description: mdContent,
-        scoring: scoring,
-        files: fileNames
-      });
-    }
-  });
-
-  // Validate: every item must have title, description, and scoring
-  var missing = items.some(function(item) {
-    return !item.title || !item.description || !item.scoring;
-  });
-  if (missing) {
-    var incomplete = [];
-    items.forEach(function(item) {
-      if (!item.title || !item.description || !item.scoring) {
-        incomplete.push('题号 ' + item.number);
-      }
-    });
-    alert('以下题目有必填项未填写（标题、题目描述、评分标准均为必填）：\n' + incomplete.join('、'));
-    return;
+function qbInsertContentMdVideo() {
+  var ta = document.getElementById('qbContentMd');
+  var url = prompt('请输入视频 URL：');
+  if (url) {
+    var start = ta.selectionStart;
+    ta.setRangeText('<video controls src="' + url + '"></video>', start, ta.selectionEnd, 'end');
+    ta.focus();
   }
-
-  // Validate at least one item has main content (md/视频/文件)
-  var hasContent = items.some(function(item) {
-    if (item.type === 'markdown' && item.content) return true;
-    if (item.type === 'video' && item.videoFileName) return true;
-    if (item.type === 'file' && item.files && item.files.length) return true;
-    return false;
-  });
-  if (!hasContent) { alert('请至少为一道题填写具体内容（Markdown 内容 / 上传视频 / 上传文件）'); return; }
-
-  var assignment = {
-    items: items
-  };
-
-  console.log('实训作业保存:', assignment);
-
-  var btn = document.querySelector('#assignmentEditorOverlay .assignment-save-bar .btn-sm--primary');
-  var originalText = btn.textContent;
-  btn.textContent = '已保存 ✓';
-  btn.style.opacity = '0.7';
-  setTimeout(function() { btn.textContent = originalText; btn.style.opacity = '1'; }, 2000);
 }
 
-// ESC / overlay click for assignment editor
-document.addEventListener('DOMContentLoaded', function() {
-  var asOverlay = document.getElementById('assignmentEditorOverlay');
-  if (asOverlay) {
-    asOverlay.addEventListener('click', function(e) {
-      if (e.target === asOverlay) closeAssignmentEditor();
-    });
-  }
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && asOverlay && asOverlay.classList.contains('active')) {
-      closeAssignmentEditor();
-    }
-  });
-});
+// Error overlay
+function qbShowContentError(msg, detail) {
+  document.getElementById('qbContentErrorMsg').textContent = msg;
+  document.getElementById('qbContentErrorDetail').textContent = detail;
+  document.getElementById('qbContentErrorOverlay').classList.add('active');
+}
+
+function qbCloseContentError() {
+  document.getElementById('qbContentErrorOverlay').classList.remove('active');
+}
 
 // ===== Initialize: expand 课程维护 by default =====
 document.addEventListener('DOMContentLoaded', function() {
