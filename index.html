@@ -789,8 +789,12 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 .assignment-editor-body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 .assignment-left-panel {
   flex: 1; display: flex; flex-direction: column; min-width: 0;
-  border-right: 1px solid var(--border);
 }
+.assignment-save-bar {
+  display: flex; justify-content: flex-end; padding: 12px 16px;
+  border-top: 1px solid var(--border); flex-shrink: 0;
+}
+.assignment-save-bar .btn-sm--primary { min-width: 120px; }
 .assignment-questions-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 16px; background: var(--bg-primary);
@@ -1949,46 +1953,9 @@ tr:hover td { background: rgba(99,102,241,0.02); }
               <div class="assignment-questions-list" id="assignmentQuestionsList">
                 <!-- dynamically filled -->
               </div>
-            </div>
-            <!-- Right: Assignment Info -->
-            <div class="activity-info-panel">
-              <div class="activity-info-panel-title">作品信息</div>
-              <div class="activity-field">
-                <label for="assignmentTitle">作品标题</label>
-                <input type="text" id="assignmentTitle" placeholder="请输入作品标题" />
+              <div class="assignment-save-bar">
+                <button class="btn-sm btn-sm--primary" onclick="saveAssignment()">保存作业</button>
               </div>
-              <div class="activity-field">
-                <label for="assignmentCover">作品封面</label>
-                <input type="text" id="assignmentCover" placeholder="请输入封面图片 URL" oninput="updateAssignmentCoverPreview()" />
-                <div class="activity-cover-preview" id="assignmentCoverPreview">
-                  <span>图片预览区域</span>
-                </div>
-              </div>
-              <div class="activity-field">
-                <label for="assignmentCategory">分类</label>
-                <select id="assignmentCategory">
-                  <option value="">请选择分类</option>
-                  <option>AI 基础</option>
-                  <option>AI 技能</option>
-                  <option>AI 开发</option>
-                  <option>职业转型</option>
-                </select>
-              </div>
-              <div class="activity-field">
-                <label for="assignmentTags">标签</label>
-                <input type="text" id="assignmentTags" placeholder="多个标签用逗号分隔" />
-              </div>
-              <div class="activity-field">
-                <label for="assignmentAttachment">附件</label>
-                <div class="assignment-file-zone" id="assignmentFileZone" onclick="document.getElementById('assignmentFileInput').click()">
-                  <div class="assignment-file-icon">📎</div>
-                  <div class="assignment-file-text">点击上传附件</div>
-                  <div class="assignment-file-hint">支持 ZIP / PDF / DOCX / MP4 / MOV 等格式</div>
-                  <div class="assignment-file-list" id="assignmentFileList"></div>
-                </div>
-                <input type="file" id="assignmentFileInput" onchange="handleAssignmentFile(this)" style="display:none" multiple accept=".zip,.pdf,.docx,.mp4,.mov,.jpg,.png,.gif,.webm,.avi,.mkv,.ppt,.pptx,.xls,.xlsx,.txt,.csv">
-              </div>
-              <button class="btn-sm btn-sm--primary" onclick="saveAssignment()" style="width:100%;margin-top:4px;">保存作业</button>
             </div>
           </div>
         </div>
@@ -3381,18 +3348,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ===== Assignment Editor =====
-let assignmentFiles = [];
 
 function openAssignmentEditor() {
   document.getElementById('assignmentEditorTitle').textContent = '创建实训作业';
-  document.getElementById('assignmentTitle').value = '';
-  document.getElementById('assignmentCover').value = '';
-  document.getElementById('assignmentCategory').value = '';
-  document.getElementById('assignmentTags').value = '';
   document.getElementById('assignmentQuestionsList').innerHTML = '';
-  assignmentFiles = [];
-  document.getElementById('assignmentFileList').innerHTML = '';
-  updateAssignmentCoverPreview();
   // Add one empty question by default
   addAssignmentQuestion();
   document.getElementById('assignmentEditorOverlay').classList.add('active');
@@ -3438,39 +3397,8 @@ function renumberAssignmentQuestions() {
   });
 }
 
-function updateAssignmentCoverPreview() {
-  const url = document.getElementById('assignmentCover').value.trim();
-  const preview = document.getElementById('assignmentCoverPreview');
-  if (url) {
-    preview.innerHTML = '<img src="' + url.replace(/"/g, '&quot;') + '" alt="封面预览" onerror="this.parentElement.innerHTML=\'<span style=&quot;color:var(--rose)&quot;>图片加载失败</span>\'" />';
-  } else {
-    preview.innerHTML = '<span>图片预览区域</span>';
-  }
-}
-
-function handleAssignmentFile(input) {
-  const listEl = document.getElementById('assignmentFileList');
-  Array.from(input.files).forEach(file => {
-    if (!assignmentFiles.find(f => f.name === file.name && f.size === file.size)) {
-      assignmentFiles.push(file);
-      const tag = document.createElement('span');
-      tag.className = 'assignment-file-tag';
-      tag.innerHTML = file.name + ' <button onclick="removeAssignmentFile(this, \'' + file.name.replace(/'/g, "\\'") + '\', ' + file.size + ')">×</button>';
-      listEl.appendChild(tag);
-    }
-  });
-  input.value = '';
-}
-
-function removeAssignmentFile(btn, filename, size) {
-  assignmentFiles = assignmentFiles.filter(f => !(f.name === filename && f.size === size));
-  btn.closest('.assignment-file-tag').remove();
-}
 
 function saveAssignment() {
-  const title = document.getElementById('assignmentTitle').value.trim();
-  if (!title) { alert('请输入作品标题'); return; }
-
   const questions = [];
   const list = document.getElementById('assignmentQuestionsList');
   Array.from(list.children).forEach((card, i) => {
@@ -3483,18 +3411,17 @@ function saveAssignment() {
     });
   });
 
+  // Validate at least one question has content
+  const hasContent = questions.some(q => q.title || q.content);
+  if (!hasContent) { alert('请至少填写一道题目'); return; }
+
   const assignment = {
-    title: title,
-    cover: document.getElementById('assignmentCover').value.trim(),
-    category: document.getElementById('assignmentCategory').value,
-    tags: document.getElementById('assignmentTags').value.trim(),
-    files: assignmentFiles.map(f => f.name),
     questions: questions
   };
 
   console.log('实训作业保存:', assignment);
 
-  const btn = document.querySelector('#assignmentEditorOverlay .activity-info-panel .btn-sm--primary');
+  const btn = document.querySelector('#assignmentEditorOverlay .assignment-save-bar .btn-sm--primary');
   const originalText = btn.textContent;
   btn.textContent = '已保存 ✓';
   btn.style.opacity = '0.7';
