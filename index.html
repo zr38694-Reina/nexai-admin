@@ -1180,14 +1180,6 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 .scoring-generate-btn:hover { background: var(--accent-light); }
 .scoring-generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.scoring-evidence-btn {
-  height: 34px; padding: 0 16px; border-radius: 7px; font-size: 13px; font-weight: 600;
-  cursor: pointer; border: 1px solid var(--border); background: var(--bg-card);
-  color: var(--text-primary); font-family: inherit; transition: all 0.15s ease;
-  display: inline-flex; align-items: center; gap: 6px;
-}
-.scoring-evidence-btn:hover { background: var(--bg-primary); border-color: var(--accent); color: var(--accent); }
-
 .scoring-empty {
   text-align: center; padding: 60px 20px; color: var(--text-muted);
 }
@@ -2327,7 +2319,6 @@ tr:hover td { background: rgba(99,102,241,0.02); }
           <div class="scoring-modal-header">
             <span class="scoring-modal-title" id="scoringModalTitle">查看题库</span>
             <div style="display:flex;align-items:center;gap:10px;">
-              <button class="scoring-evidence-btn" id="scoringEvidenceBtn" onclick="showInEvidenceCards()">📇 在证据卡片中显示</button>
               <button class="scoring-generate-btn" id="scoringGenerateBtn" onclick="generateScoringCriteria()">⚡ 一键生成评分指标</button>
               <button class="scoring-modal-close" onclick="closeScoringModal()" title="关闭">✕</button>
             </div>
@@ -3546,55 +3537,6 @@ function generateScoringCriteria() {
   document.getElementById('scoringEmpty').style.display = 'none';
   document.getElementById('scoringGenerateBtn').disabled = true;
   document.getElementById('scoringGenerateBtn').textContent = '✅ 已生成评分指标';
-}
-
-function showInEvidenceCards() {
-  var selectedItems = document.querySelectorAll('#scoringLeftPanel .scoring-question-item.selected');
-  if (selectedItems.length === 0) {
-    alert('请先勾选需要在证据卡片中显示的题目');
-    return;
-  }
-
-  var row = scoringCurrentRow;
-  var cards = [];
-  try { cards = JSON.parse(row.getAttribute('data-quiz-cards') || '[]'); } catch(e) { cards = []; }
-
-  var evidenceHtml = '';
-  selectedItems.forEach(function(item) {
-    var idx = parseInt(item.getAttribute('data-qindex'));
-    var card = cards[idx];
-    if (!card) return;
-    var title = card.type === 'content' ? (card.title || '未命名') : (card.question || '未命名');
-    var desc = card.type === 'content' ? (card.description || '') : '';
-    var typeLabel = card.type === 'content'
-      ? (card.contentType === 'file' ? '📁 文件' : '📝 Markdown')
-      : (card.quizType === 'multiple' ? '🟡 多选' : card.quizType === 'short' ? '📝 简答' : '🔘 单选');
-
-    evidenceHtml += '<div class="scoring-result-item">';
-    evidenceHtml += '<div class="scoring-result-header">';
-    evidenceHtml += '<span class="scoring-result-number">' + (idx + 1) + '</span>';
-    evidenceHtml += escHtml(title);
-    evidenceHtml += '<span style="margin-left:auto;font-size:11px;color:var(--text-muted);">' + typeLabel + '</span>';
-    evidenceHtml += '</div>';
-    evidenceHtml += '<div style="padding:14px 16px;">';
-    if (desc) {
-      evidenceHtml += '<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">' + escHtml(desc) + '</div>';
-    }
-    if (card.type === 'quiz' && card.options) {
-      evidenceHtml += '<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">';
-      card.options.forEach(function(opt, oi) {
-        var letter = String.fromCharCode(65 + oi);
-        evidenceHtml += '<div style="font-size:12px;padding:4px 10px;border-radius:4px;' +
-          (opt.correct ? 'background:#dcfce7;color:#166534;' : 'background:var(--bg-primary);color:var(--text-secondary);') + '">' +
-          letter + '. ' + escHtml(opt.text) + (opt.correct ? ' ✅' : '') + '</div>';
-      });
-      evidenceHtml += '</div>';
-    }
-    evidenceHtml += '</div></div>';
-  });
-
-  document.getElementById('scoringResults').innerHTML = evidenceHtml;
-  document.getElementById('scoringEmpty').style.display = 'none';
 }
 
 // ESC to close scoring modal
