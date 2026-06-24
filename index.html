@@ -1211,9 +1211,18 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 .scoring-table tbody td {
   padding: 10px 14px; border-bottom: 1px solid var(--border-light);
   color: var(--text-primary); vertical-align: top;
+  outline: none; transition: background 0.15s;
+}
+.scoring-table tbody td[contenteditable="true"] {
+  cursor: text;
+}
+.scoring-table tbody td[contenteditable="true"]:focus {
+  background: #fffbeb; box-shadow: inset 0 0 0 1.5px var(--accent);
+  border-radius: 2px;
 }
 .scoring-table tbody tr:last-child td { border-bottom: none; }
 .scoring-table tbody tr:hover td { background: var(--bg-primary); }
+.scoring-table tbody td[contenteditable="true"]:focus:hover { background: #fffbeb; }
 
 .scoring-table .scoring-dimension { font-weight: 600; white-space: nowrap; }
 .scoring-table .scoring-weight {
@@ -1222,6 +1231,32 @@ tr:hover td { background: rgba(99,102,241,0.02); }
 .scoring-table .scoring-points {
   color: var(--accent); font-weight: 700; text-align: center; white-space: nowrap;
 }
+
+/* Scoring action buttons */
+.scoring-actions {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 10px 14px; border-top: 1px solid var(--border-light);
+  background: var(--bg-primary);
+}
+.scoring-save-btn, .scoring-delete-btn {
+  height: 30px; padding: 0 14px; border-radius: 6px; font-size: 12px;
+  font-weight: 600; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 4px;
+  transition: all 0.15s ease;
+}
+.scoring-save-btn {
+  border: 1px solid var(--accent); background: var(--accent);
+  color: #fff;
+}
+.scoring-save-btn:hover { background: var(--accent-light); border-color: var(--accent-light); }
+.scoring-save-btn.saved {
+  background: #16a34a; border-color: #16a34a;
+}
+.scoring-delete-btn {
+  border: 1px solid var(--border); background: var(--bg-card);
+  color: var(--text-secondary);
+}
+.scoring-delete-btn:hover { background: #fef2f2; border-color: #ef4444; color: #ef4444; }
 </style>
 </head>
 <body>
@@ -3520,7 +3555,7 @@ function generateScoringCriteria() {
     if (!card) return;
     var title = card.type === 'content' ? (card.title || '未命名') : (card.question || '未命名');
 
-    resultsHtml += '<div class="scoring-result-item">';
+    resultsHtml += '<div class="scoring-result-item" data-qindex="' + idx + '">';
     resultsHtml += '<div class="scoring-result-header">';
     resultsHtml += '<span class="scoring-result-number">' + (idx + 1) + '</span>';
     resultsHtml += escHtml(title);
@@ -3528,8 +3563,17 @@ function generateScoringCriteria() {
     resultsHtml += '<table class="scoring-table">';
     resultsHtml += '<thead><tr><th>评分指标名称</th><th>达标要求</th><th>未达标要求</th><th>优秀要求</th></tr></thead>';
     resultsHtml += '<tbody>';
-    resultsHtml += '<tr><td class="scoring-dimension">测试评价指标1</td><td>达标要求1</td><td>未达标要求1</td><td>优秀要求1</td></tr>';
+    resultsHtml += '<tr>';
+    resultsHtml += '<td class="scoring-dimension" contenteditable="true">测试评价指标1</td>';
+    resultsHtml += '<td contenteditable="true">达标要求1</td>';
+    resultsHtml += '<td contenteditable="true">未达标要求1</td>';
+    resultsHtml += '<td contenteditable="true">优秀要求1</td>';
+    resultsHtml += '</tr>';
     resultsHtml += '</tbody></table>';
+    resultsHtml += '<div class="scoring-actions">';
+    resultsHtml += '<button class="scoring-save-btn" onclick="saveScoringRow(this)">💾 保存</button>';
+    resultsHtml += '<button class="scoring-delete-btn" onclick="deleteScoringRow(this)">🗑 删除</button>';
+    resultsHtml += '</div>';
     resultsHtml += '</div>';
   });
 
@@ -3537,6 +3581,37 @@ function generateScoringCriteria() {
   document.getElementById('scoringEmpty').style.display = 'none';
   document.getElementById('scoringGenerateBtn').disabled = true;
   document.getElementById('scoringGenerateBtn').textContent = '✅ 已生成评分指标';
+}
+
+function saveScoringRow(btn) {
+  var item = btn.closest('.scoring-result-item');
+  var cells = item.querySelectorAll('tbody td[contenteditable]');
+  // Collect current values
+  item._savedData = Array.from(cells).map(function(td) { return td.textContent.trim(); });
+  // Visual feedback
+  btn.textContent = '✅ 已保存';
+  btn.classList.add('saved');
+  setTimeout(function() {
+    btn.textContent = '💾 保存';
+    btn.classList.remove('saved');
+  }, 1500);
+}
+
+function deleteScoringRow(btn) {
+  var item = btn.closest('.scoring-result-item');
+  item.style.transition = 'opacity 0.2s, transform 0.2s';
+  item.style.opacity = '0';
+  item.style.transform = 'translateX(20px)';
+  setTimeout(function() {
+    item.remove();
+    // If no results left, show empty state
+    var results = document.getElementById('scoringResults');
+    if (!results.querySelector('.scoring-result-item')) {
+      document.getElementById('scoringEmpty').style.display = '';
+      document.getElementById('scoringGenerateBtn').disabled = false;
+      document.getElementById('scoringGenerateBtn').textContent = '⚡ 一键生成评分指标';
+    }
+  }, 200);
 }
 
 // ESC to close scoring modal
